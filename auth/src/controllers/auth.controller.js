@@ -45,7 +45,7 @@ const {publicToQueue}   = require('../broker/rabbit.js')
     }
 
 }
-
+//respnse me aapko use karn hae res.redirect(;'http://localhost:5137)x 
 const GoogleAuthCallback = async (req, res) => {
     const user = req.user;
     // console.log(user)
@@ -65,12 +65,13 @@ const GoogleAuthCallback = async (req, res) => {
             },process.env.JWT_SECRET,{expiresIn:'2d'});
                 
             res.cookie('token',token)
-            return res.status(200).json({message:'User logged in successfully', user:{
-                id:ifUserAlerdyExists._id,
-                email:ifUserAlerdyExists.email,
-                fullName:ifUserAlerdyExists.fullName,
-                role:ifUserAlerdyExists.role
-            }})
+            // return res.status(200).json({message:'User logged in successfully', user:{
+            //     id:ifUserAlerdyExists._id,
+            //     email:ifUserAlerdyExists.email,
+            //     fullName:ifUserAlerdyExists.fullName,
+            //     role:ifUserAlerdyExists.role
+            // }})
+             return res.redirect('http://localhost:5137') // frontend ka url jaha redirect karna hae
         }
 
        const newUser =  await UserModel.create({
@@ -95,19 +96,47 @@ const GoogleAuthCallback = async (req, res) => {
     },process.env.JWT_SECRET,{expiresIn:'2d'});
         
     res.cookie('token',token)
-    return res.status(201).json({message:'User registered successfully', user:{
-        id:newUser._id,
-        email:newUser.email,
-        fullName:newUser.fullName,
-        role:newUser.role
+    // return res.status(201).json({message:'User registered successfully', user:{
+    //     id:newUser._id,
+    //     email:newUser.email,
+    //     fullName:newUser.fullName,
+    //     role:newUser.role
+    // }
+    //    }) 
+    return res.redirect('http://localhost:5137') // frontend ka url jaha redirect karna hae
+
+
+}
+const login = async(req,res)=>{
+    const {email,password} = req.body;
+    try {
+        const existingUser = await UserModel.findOne({ email });
+        if(!existingUser){
+            return res.status(404).json({message:'User not found'});
+        }
+        const isMatch = await bcrypt.compare(password,existingUser.password);
+        if(!isMatch){
+            return res.status(401).json({message:'Invalid credentials'});
+        }
+        const token = jwt.sign({
+            id:existingUser._id,
+            role:existingUser.role
+        },process.env.JWT_SECRET,{expiresIn:'2d'});
+        res.cookie('token',token);
+        return res.status(200).json({message:'User logged in successfully', user:{
+            id:existingUser._id,
+            email:existingUser.email,
+            fullName:existingUser.fullName,
+            role:existingUser.role
+        }});
+    } catch (error) {
+        console.log('Error during user login:', error);
+        return res.status(500).json({message:'Internal server error'});
     }
-       }) 
-      
-
-
 }
 
 module.exports = {
     register,
-    GoogleAuthCallback
+    GoogleAuthCallback,
+    login
 };
