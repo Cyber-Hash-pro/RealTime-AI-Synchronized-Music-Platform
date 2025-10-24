@@ -1,11 +1,12 @@
 const UserModel = require('../model/user.model.js')
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const {publicToQueue}   = require('../broker/rabbit.js')
  const register = async(req,res)=>{
     const {email,fullName:{firstName,lastName},password} = req.body;
     try {
-        const existingUser = await UserModel.find({email});
-        if(!existingUser){
+        const existingUser = await UserModel.findOne({email});
+        if(existingUser){
             return res.status(400).json({message:'User already exists'})
         }
         const hashedPassword =  await bcrypt.hash(password,10);
@@ -17,7 +18,12 @@ const jwt = require('jsonwebtoken');
             },
             password:hashedPassword
         })
-       
+    await publicToQueue('user_created',{ // queue name  user_created  data dekne ke liye on LavinMQ website  LavinMQ Manager me jao dashbord me queue me jao waha dekh sakte ho kinte kyu create huv hae 
+        userId:newUser._id,
+        fullName:`${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
+        email:newUser.email,
+        type:'WELCOME_EMAIL'
+       })  
 
         const token = jwt.sign({
             id:newUser._id,
@@ -75,6 +81,13 @@ const GoogleAuthCallback = async (req, res) => {
         },
         googleId:user.id
        });
+         await publicToQueue('user_created',{ // queue name  user_created  data dekne ke liye on LavinMQ website  LavinMQ Manager me jao dashbord me queue me jao waha dekh sakte ho kinte kyu create huv hae 
+        userId:newUser._id,
+        fullName:`${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
+        email:newUser.email,
+        type:'WELCOME_EMAIL'
+       })  
+
 
        const token = jwt.sign({
         id:newUser._id,
