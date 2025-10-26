@@ -27,7 +27,8 @@ const {publicToQueue}   = require('../broker/rabbit.js')
 
         const token = jwt.sign({
             id:newUser._id,
-            role:newUser.role
+            role:newUser.role,
+            fullName:newUser.fullName
         },process.env.JWT_SECRET,{expiresIn:'2d'});
             
         res.cookie('token',token)
@@ -61,7 +62,8 @@ const GoogleAuthCallback = async (req, res) => {
             // User already exists, generate token
             const token = jwt.sign({
                 id:ifUserAlerdyExists._id,
-                role:ifUserAlerdyExists.role
+                role:ifUserAlerdyExists.role,
+                fullName:ifUserAlerdyExists.fullName
             },process.env.JWT_SECRET,{expiresIn:'2d'});
                 
             res.cookie('token',token)
@@ -92,7 +94,8 @@ const GoogleAuthCallback = async (req, res) => {
 
        const token = jwt.sign({
         id:newUser._id,
-        role:newUser.role
+        role:newUser.role,
+        fullName:newUser.fullName        
     },process.env.JWT_SECRET,{expiresIn:'2d'});
         
     res.cookie('token',token)
@@ -120,7 +123,8 @@ const login = async(req,res)=>{
         }
         const token = jwt.sign({
             id:existingUser._id,
-            role:existingUser.role
+            role:existingUser.role,
+            fullName:existingUser.fullName
         },process.env.JWT_SECRET,{expiresIn:'2d'});
         res.cookie('token',token);
         return res.status(200).json({message:'User logged in successfully', user:{
