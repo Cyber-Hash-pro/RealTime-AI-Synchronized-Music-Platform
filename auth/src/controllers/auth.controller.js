@@ -3,7 +3,8 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const {publicToQueue}   = require('../broker/rabbit.js')
  const register = async(req,res)=>{
-    const {email,fullName:{firstName,lastName},password} = req.body;
+   const {email,fullName:{firstName,lastName},password,role='user'} = req.body;
+   console.log(email)
     try {
         const existingUser = await UserModel.findOne({email});
         if(existingUser){
@@ -16,7 +17,8 @@ const {publicToQueue}   = require('../broker/rabbit.js')
                 firstName:firstName,
                 lastName:lastName
             },
-            password:hashedPassword
+            password:hashedPassword,
+            role:role
         })
     await publicToQueue('user_created',{ // queue name  user_created  data dekne ke liye on LavinMQ website  LavinMQ Manager me jao dashbord me queue me jao waha dekh sakte ho kinte kyu create huv hae 
         userId:newUser._id,
@@ -48,68 +50,73 @@ const {publicToQueue}   = require('../broker/rabbit.js')
 }
 //respnse me aapko use karn hae res.redirect(;'http://localhost:5137)x 
 const GoogleAuthCallback = async (req, res) => {
+  try {
     const user = req.user;
-    // console.log(user)
-    // scoper me definde kiya sara data show hoga kidar req.user me 
-    const ifUserAlerdyExists = await UserModel.findOne({     
-        $or:[
-            {email:user.emails[0].value}, // emails array me se first email le raha h jo milta hae googl ke api se req.user jo google deta hae eseliy emails[0].value
-            { googleId:user.id}
-        ]
+    //console.log(user)
+    
+
+    // Check if the user already exists in DB
+    const ifUserAlreadyExists = await UserModel.findOne({
+      $or: [
+        { email: user.emails[0].value }, // first email from Google profile
+        { googleId: user.id }
+      ]
     });
-   
-        if(ifUserAlerdyExists){
-            // User already exists, generate token
-            const token = jwt.sign({
-                id:ifUserAlerdyExists._id,
-                role:ifUserAlerdyExists.role,
-                fullName:ifUserAlerdyExists.fullName
-            },process.env.JWT_SECRET,{expiresIn:'2d'});
-                
-            res.cookie('token',token)
-            // return res.status(200).json({message:'User logged in successfully', user:{
-            //     id:ifUserAlerdyExists._id,
-            //     email:ifUserAlerdyExists.email,
-            //     fullName:ifUserAlerdyExists.fullName,
-            //     role:ifUserAlerdyExists.role
-            // }})
-             return res.redirect('http://localhost:5137') // frontend ka url jaha redirect karna hae
-        }
 
-       const newUser =  await UserModel.create({
-        email:user.emails[0].value,
-        fullName:{
-            firstName:user.name.givenName,
-            lastName:user.name.familyName
+    if (ifUserAlreadyExists) {
+      // User already exists → generate JWT token
+      const token = jwt.sign(
+        {
+          id: ifUserAlreadyExists._id,
+          role: ifUserAlreadyExists.role,
+          fullName: ifUserAlreadyExists.fullName
         },
-        googleId:user.id
-       });
-         await publicToQueue('user_created',{ // queue name  user_created  data dekne ke liye on LavinMQ website  LavinMQ Manager me jao dashbord me queue me jao waha dekh sakte ho kinte kyu create huv hae 
-        userId:newUser._id,
-        fullName:`${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
-        email:newUser.email,
-        type:'WELCOME_EMAIL'
-       })  
+        process.env.JWT_SECRET,
+        { expiresIn: '2d' }
+      );
 
+      res.cookie('token', token);
+      return res.redirect('http://localhost:5173');
+    }
 
-       const token = jwt.sign({
-        id:newUser._id,
-        role:newUser.role,
-        fullName:newUser.fullName        
-    },process.env.JWT_SECRET,{expiresIn:'2d'});
-        
-    res.cookie('token',token)
-    // return res.status(201).json({message:'User registered successfully', user:{
-    //     id:newUser._id,
-    //     email:newUser.email,
-    //     fullName:newUser.fullName,
-    //     role:newUser.role
-    // }
-    //    }) 
-    return res.redirect('http://localhost:5137') // frontend ka url jaha redirect karna hae
+    // ❌ Typo fixed: user.emailsr → user.emails
+    const newUser = await UserModel.create({
+      email: user.emails[0].value,
+      fullName: {
+        firstName: user.name.givenName,
+        lastName: user.name.familyName
+      },
+      googleId: user.id
+    });
 
+    // Publish event to queue
+    await publicToQueue('user_created', {
+      userId: newUser._id,
+      fullName: `${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
+      email: newUser.email,
+      type: 'WELCOME_EMAIL'
+    });
 
-}
+    // Generate token for new user
+    const token = jwt.sign(
+      {
+        id: newUser._id,
+        role: newUser.role,
+        fullName: newUser.fullName
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '2d' }
+    );
+
+    res.cookie('token', token);
+    return res.redirect('http://localhost:5173');
+
+  } catch (error) {
+    console.error('GoogleAuthCallback Error:', error);
+    return res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
 const login = async(req,res)=>{
     const {email,password} = req.body;
     try {

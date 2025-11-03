@@ -6,8 +6,9 @@ const cookie = require("cookie"); // ye package is used to parse cookies
 function initSocketServer(httpServer) {
     const io = new Server(httpServer, {
         cors: {
-            origin: "*",
-          credentials: true
+            origin: "http://localhost:5173",
+          credentials: true,
+          
         }
     }); 
     io.use((socket, next) => {

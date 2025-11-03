@@ -13,6 +13,6 @@ initSocketServer(httpServer);
 
 
 
-httpServer.listen(3003, () => {
-  console.log('Server is running on port 3003');
+httpServer.listen(3002, () => {
+  console.log('Server is running on port 3002');
 });
