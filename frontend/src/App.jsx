@@ -30,8 +30,84 @@ function App() {
 
 
   return (
-    <div>
-      <main>
+    <div className="app">
+      {/* Sidebar Navigation */}
+      <aside className="app-sidebar">
+        <div className="spotify-logo">
+          Music App
+        </div>
+        
+        <nav>
+          <ul className="nav-menu">
+            <li>
+              <NavLink 
+                to="/" 
+                className={({ isActive }) => isActive ? 'nav-home active' : 'nav-home'}
+              >
+                Home
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/search" 
+                className={({ isActive }) => isActive ? 'nav-search active' : 'nav-search'}
+              >
+                Search
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/library" 
+                className={({ isActive }) => isActive ? 'nav-library active' : 'nav-library'}
+              >
+                Your Library
+              </NavLink>
+            </li>
+          </ul>
+          
+          <div style={{ marginTop: 'var(--space-8)', marginBottom: 'var(--space-4)' }}>
+            <hr style={{ border: 'none', borderTop: '1px solid var(--color-border)', margin: 'var(--space-4) 0' }} />
+          </div>
+          
+          <ul className="nav-menu">
+            <li>
+              <NavLink 
+                to="/artist/dashboard" 
+                className={({ isActive }) => isActive ? 'nav-artist active' : 'nav-artist'}
+              >
+                Artist Dashboard
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/artist/dashboard/upload-music" 
+                className={({ isActive }) => isActive ? 'nav-upload active' : 'nav-upload'}
+              >
+                Upload Music
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/register" 
+                className={({ isActive }) => isActive ? 'nav-register active' : 'nav-register'}
+              >
+                Register
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/login" 
+                className={({ isActive }) => isActive ? 'nav-login active' : 'nav-login'}
+              >
+                Login
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
+      </aside>
+
+      {/* Main Content */}
+      <main className="app-main">
         <Routes>
           <Route path="/" element={<Home socket={socket} />} />
           <Route path="/register" element={<Register />} />
@@ -41,6 +117,37 @@ function App() {
           <Route path="/music/:id" element={<MusicPlayer />} />
         </Routes>
       </main>
+
+      {/* Bottom Play Bar */}
+      <div className="app-playbar">
+        <div className="playbar-left">
+          <div className="current-track-info">
+            <div className="track-image">
+              {/* Track image placeholder */}
+            </div>
+            <div className="track-details">
+              <div className="track-name">Track Name</div>
+              <div className="track-artist">Artist Name</div>
+            </div>
+          </div>
+        </div>
+        
+        <div className="playbar-center">
+          <div className="player-controls">
+            {/* Player controls will go here */}
+            <button className="btn-small btn-secondary">⏮</button>
+            <button className="btn-small">⏯</button>
+            <button className="btn-small btn-secondary">⏭</button>
+          </div>
+        </div>
+        
+        <div className="playbar-right">
+          <div className="volume-controls">
+            {/* Volume controls will go here */}
+            <button className="btn-small btn-secondary">🔊</button>
+          </div>
+        </div>
+      </div>
     </div>
 
   )

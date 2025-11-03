@@ -1,23 +1,97 @@
-/* Base resets & structural layout that complement theme tokens */
-* { box-sizing: border-box; }
+/* Spotify-inspired Base Styles */
+* { 
+  box-sizing: border-box; 
+}
+
+html {
+  height: 100%;
+  overflow-x: hidden;
+}
 
 body {
   margin: 0;
+  padding: 0;
   min-width: 320px;
   min-height: 100vh;
+  height: 100%;
+  font-family: var(--font-sans);
+  background: var(--color-bg);
+  color: var(--color-text);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  overflow-x: hidden;
 }
 
-#root { width: 100%; }
+#root { 
+  width: 100%; 
+  min-height: 100vh;
+  background: var(--color-bg);
+}
 
-a { text-decoration: none; }
+/* Global link styles */
+a { 
+  text-decoration: none; 
+  color: inherit;
+  transition: color var(--transition-fast);
+}
 
-/* Utility override for centering previous demo layout */
-body { display: flex; place-items: flex-start; justify-content: center; padding: var(--space-8) var(--space-4); }
+a:focus-visible { 
+  outline: 2px solid var(--color-focus-ring); 
+  outline-offset: 2px; 
+}
 
-h1 { font-size: var(--font-size-2xl); }
+/* Typography scale consistency */
+h1 { 
+  font-size: var(--font-size-3xl); 
+  font-weight: var(--font-weight-black);
+}
 
-/* Remove default focus outline gap on links if needed */
-a:focus-visible { outline: 2px solid var(--color-focus-ring); outline-offset: 2px; }
+/* Remove any global centering that interferes with Spotify layout */
+body { 
+  display: block;
+  place-items: unset;
+  justify-content: unset;
+  padding: 0;
+}
+
+/* Ensure consistent button styling */
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+  transition: all var(--transition-fast);
+}
+
+button:focus-visible {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+}
+
+/* Form elements consistency */
+input, textarea, select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none;
+}
+
+/* Accessibility improvements */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  :root {
+    --color-border: #ffffff;
+    --color-text-muted: #cccccc;
+  }
+}
