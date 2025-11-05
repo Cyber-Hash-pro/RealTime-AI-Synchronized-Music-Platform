@@ -4,10 +4,11 @@ const jwt = require('jsonwebtoken');
 const {publicToQueue}   = require('../broker/rabbit.js')
  const register = async(req,res)=>{
    const {email,fullName:{firstName,lastName},password,role='user'} = req.body;
-   console.log(email)
+   console.log(req.body)
     try {
         const existingUser = await UserModel.findOne({email});
         if(existingUser){
+          // console.log('User already exists with email:', email);
             return res.status(400).json({message:'User already exists'})
         }
         const hashedPassword =  await bcrypt.hash(password,10);
@@ -20,12 +21,12 @@ const {publicToQueue}   = require('../broker/rabbit.js')
             password:hashedPassword,
             role:role
         })
-    await publicToQueue('user_created',{ // queue name  user_created  data dekne ke liye on LavinMQ website  LavinMQ Manager me jao dashbord me queue me jao waha dekh sakte ho kinte kyu create huv hae 
-        userId:newUser._id,
-        fullName:`${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
-        email:newUser.email,
-        type:'WELCOME_EMAIL'
-       })  
+    // await publicToQueue('user_created',{ // queue name  user_created  data dekne ke liye on LavinMQ website  LavinMQ Manager me jao dashbord me queue me jao waha dekh sakte ho kinte kyu create huv hae 
+    //     userId:newUser._id,
+    //     fullName:`${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
+    //     email:newUser.email,
+    //     type:'WELCOME_EMAIL'
+    //    })  
 
         const token = jwt.sign({
             id:newUser._id,
@@ -90,12 +91,12 @@ const GoogleAuthCallback = async (req, res) => {
     });
 
     // Publish event to queue
-    await publicToQueue('user_created', {
-      userId: newUser._id,
-      fullName: `${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
-      email: newUser.email,
-      type: 'WELCOME_EMAIL'
-    });
+    // await publicToQueue('user_created', {
+    //   userId: newUser._id,
+    //   fullName: `${newUser.fullName.firstName} ${newUser.fullName.lastName}`,
+    //   email: newUser.email,
+    //   type: 'WELCOME_EMAIL'
+    // });
 
     // Generate token for new user
     const token = jwt.sign(

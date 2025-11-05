@@ -9,40 +9,12 @@ export default function ArtistDashboard() {
     
     // Unified music objects (could be fetched later)
     const [ musics, setMusics ] = useState([
-        { id: 'm1', title: 'Midnight Echoes', artist: 'You', coverImageUrl: 'https://via.placeholder.com/56?text=M1', musicUrl: '#', plays: 12450, duration: '3:42', released: '2024-11-10' },
-        { id: 'm2', title: 'Golden Skies', artist: 'You', coverImageUrl: 'https://via.placeholder.com/56?text=M2', musicUrl: '#', plays: 9803, duration: '4:05', released: '2025-01-02' },
-        { id: 'm3', title: 'Fading Lights', artist: 'You', coverImageUrl: 'https://via.placeholder.com/56?text=M3', musicUrl: '#', plays: 15221, duration: '2:58', released: '2024-09-28' },
-        { id: 'm4', title: 'Ocean Drift', artist: 'You', coverImageUrl: 'https://via.placeholder.com/56?text=M4', musicUrl: '#', plays: 4311, duration: '3:15', released: '2025-02-14' },
-        { id: 'm5', title: 'Solstice', artist: 'You', coverImageUrl: 'https://via.placeholder.com/56?text=M5', musicUrl: '#', plays: 8765, duration: '3:05', released: '2025-03-01' },
     ]);
 
     // Playlists referencing subset of musics
     const [ playlists, setPlaylists ] = useState(
         [
-            {
-                id: 'p1',
-                title: 'Chill Vibes',
-                artist: 'You',
-                followers: 3200,
-                updated: '2d ago',
-                musics: [ 'm1', 'm3', 'm4' ]
-            },
-            {
-                id: 'p2',
-                title: 'Focus Beats',
-                artist: 'You',
-                followers: 5120,
-                updated: '5d ago',
-                musics: [ 'm2', 'm5', 'm3' ]
-            },
-            {
-                id: 'p3',
-                title: 'Acoustic Session',
-                artist: 'You',
-                followers: 1780,
-                updated: '1d ago',
-                musics: [ 'm4', 'm1' ]
-            }
+           
         ]
     )
 

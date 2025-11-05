@@ -4,8 +4,10 @@ const {uploadMusicAndCover} = require('../services/storge.service.js')
 
 
 const uploadMusic = async(req,res)=>{
-const musicFile = req.files['music'][0];
+// console.log(req)
+console.log('Files received:', req);
 const coverImageFile = req.files['coverImage'][0];
+const musicFile = req.files['music'][0];
 
 try{
 

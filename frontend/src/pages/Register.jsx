@@ -25,7 +25,7 @@ export default function Register() {
 
   const onSubmit = async (data) => {
     try {
-      console.log("Submitting form:", data);
+      // console.log("Submitting form:", data);
 
       await axios.post("http://localhost:3000/api/auth/register", {
         email: data.email,
@@ -41,7 +41,8 @@ export default function Register() {
 
       navigate('/');
     } catch (err) {
-      console.error("Error during registration:", err);
+      console.log("Error during registration:", err.response.data);
+      alert(err.response.data.message || 'Registration failed');
     }
   };
 
