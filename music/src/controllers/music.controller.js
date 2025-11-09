@@ -1,7 +1,7 @@
 const musicModel = require('../model/music.model.js');
 const playlistModel = require('../model/playlist.model.js');
 const {uploadMusicAndCover} = require('../services/storge.service.js')
-
+const UserPlaylist = require('../model/userplaylist.model.js');
 
 const uploadMusic = async(req,res)=>{
 // console.log(req)
@@ -125,4 +125,50 @@ const getMusicById= async(req,res)=>{
     }
 
 }   
-module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById};
+ const getAllPlaylists = async(req,res)=>{
+    try{
+        const playlists = await playlistModel.find().lean().select('-artistId').select('_id');
+        return res.status(200).json({message:"All Playlists fetched successfully", playlists:playlists})
+
+    }catch(error){
+        console.log("Error in fetching all playlists", error);
+        return res.status(500).json({message:"Internal server error", error})
+
+    }
+}   
+
+const createUserPlaylist = async(req,res)=>{
+    const {title,musics} = req.body;
+    const user= req.user
+    try{
+        const playlist = await UserPlaylist.create({
+            title:title,
+            userId:user.id,
+            musics:musics
+        })
+        return res.status(201).json({
+            message:"User Playlist created Successfull",
+            playlist
+        })
+
+    }catch(error){
+        console.log("Error in creating user playlist", error);
+        return res.status(500).json({message:"Internal servver error", error})
+
+    }
+
+}           
+const getUserPlaylists = async(req,res)=>{
+    try{
+        const playlists = await UserPlaylist.find({userId:req.user.id});
+        return res.status(200).json({message:"User Playlists fetched successfully", playlists:playlists})
+
+    }catch(error){
+        console.log("Error in fetching user playlists", error);
+        return res.status(500).json({message:"Internal server error", error})
+
+    }
+}   
+
+
+module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById,getAllPlaylists,createUserPlaylist,getUserPlaylists};

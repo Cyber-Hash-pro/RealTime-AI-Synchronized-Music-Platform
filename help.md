@@ -91,3 +91,20 @@ Would you like me to create a **complete React structure (code)** for this —
 so you get both **AI chat + voice music control** in one app?
 (It will include: voice recognition, OpenAI chat integration, and music player control logic.)
 
+Code is mostly fine, but there are a few logical and structural mistakes you should fix for it to work correctly.
+Here’s a detailed review:
+
+⚠️ 1. Wrong useEffect dependency logic
+useEffect(() => {
+  dispatch(fetchMusicData());
+  dispatch(fetchMusicPlaylist());
+  setPlaylist(musicPlaylist);
+  if (musicdata && musicdata.length > 0) {
+    setSongs(musicdata);
+  }
+}, []);
+
+
+Problem:
+You’re setting playlist and songs right after dispatch — but Redux data (musicdata & musicPlaylist) won’t be available immediately because fetching is async.
+So they’ll stay empty initially.

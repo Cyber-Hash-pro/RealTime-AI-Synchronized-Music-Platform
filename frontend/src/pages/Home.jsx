@@ -1,16 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Sidebar from '../components/Sidebar';
 import Header from '../components/Header';
 import WelcomeSection from '../components/WelcomeSection';
 import ContentSection from '../components/ContentSection';
-import MusicCard from '../components/MusicCard';
+import MyPlaylistSection from '../components/MyPlaylistSection';
+import ArtistPlaylistSection from '../components/ArtistPlaylistSection';
+import SongListSection from '../components/SongListSection';
 import './Home.css';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMusicData ,fetchMusicPlaylist, fetchMyPlaylists} from '../store/actions/musicAction';
 
 const Home = () => {
+  const navigate = useNavigate();
   const [currentSong, setCurrentSong] = useState(null);
+  const [playlist, setPlaylist] = useState([]);
+  const [songs, setSongs] = useState([]);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isMoodDetectorOpen, setIsMoodDetectorOpen] = useState(false);
+  const { musicdata, musicPlaylist, myPlaylist  } = useSelector(state => state.music);
+  const dispatch = useDispatch();
 
+  // Debug logging
+  console.log('Redux State - musicdata:', musicdata);
+  console.log('Redux State - musicPlaylist (Artist Playlists):', musicPlaylist);
+  console.log('Redux State - myPlaylist (User Playlists):', myPlaylist);
+  
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
   };
@@ -28,35 +43,41 @@ const Home = () => {
   };
 
   const handlePlay = (songInfo) => {
-    console.log('Playing:', songInfo);
-    // Add your play logic here
+    console.log('Playing song:', songInfo);
+    
+    // Navigate to song player page
+    if (songInfo._id) {
+      navigate(`/song/${songInfo._id}`);
+    }
   };
 
-  // Sample data
-  const quickPicks = [
-    { title: 'Playlist 1', image: null },
-    { title: 'Playlist 2', image: null },
-    { title: 'Playlist 3', image: null },
-    { title: 'Playlist 4', image: null },
-    { title: 'Playlist 5', image: null },
-    { title: 'Playlist 6', image: null },
-  ];
+  const handlePlaylistClick = (playlist) => {
+    console.log('Opening playlist:', playlist);
+    // You can navigate to a playlist page here
+    // navigate(`/playlist/${playlist._id}`);
+  };
 
-  const madeForYou = [
-    { title: 'Daily Mix 1', description: 'Your favorite tracks and more', image: null },
-    { title: 'Daily Mix 2', description: 'Your favorite tracks and more', image: null },
-    { title: 'Daily Mix 3', description: 'Your favorite tracks and more', image: null },
-    { title: 'Daily Mix 4', description: 'Your favorite tracks and more', image: null },
-    { title: 'Daily Mix 5', description: 'Your favorite tracks and more', image: null },
-  ];
+  const handleArtistClick = (artist) => {
+    console.log('Opening artist:', artist);
+    // You can navigate to an artist page here
+    // navigate(`/artist/${artist._id}`);
+  };
 
-  const recentlyPlayed = [
-    { title: 'Song 1', description: 'Artist Name', image: null },
-    { title: 'Song 2', description: 'Artist Name', image: null },
-    { title: 'Song 3', description: 'Artist Name', image: null },
-    { title: 'Song 4', description: 'Artist Name', image: null },
-    { title: 'Song 5', description: 'Artist Name', image: null },
-  ];
+  useEffect(() => {
+  dispatch(fetchMusicData());
+  dispatch(fetchMusicPlaylist()); // Fetch artist playlists
+  dispatch(fetchMyPlaylists()); // Fetch user playlists
+}, [dispatch]);
+
+useEffect(() => {
+  if (musicPlaylist && musicPlaylist.length > 0) {
+    setPlaylist(musicPlaylist);
+  }
+  if (musicdata && musicdata.length > 0) {
+    setSongs(musicdata);
+  }
+  
+}, [musicdata, musicPlaylist]);
 
   const getGreeting = () => {
     const hour = new Date().getHours();
@@ -73,7 +94,11 @@ const Home = () => {
       )}
 
       {/* Sidebar */}
-      <Sidebar isOpen={isSidebarOpen} currentSong={currentSong} />
+      <Sidebar 
+        isOpen={isSidebarOpen} 
+        currentSong={currentSong}
+        onNavigate={closeSidebar}
+      />
 
       {/* Main Content */}
       <main className={`main-content ${isMoodDetectorOpen ? 'blurred' : ''}`}>
@@ -84,38 +109,42 @@ const Home = () => {
         <div className="content-area">
           <WelcomeSection 
             greeting={getGreeting()} 
-            quickPicks={quickPicks}
+            quickPicks={musicPlaylist}
           />
 
+          <ContentSection 
+            title="My Playlists"
+            onSeeAll={() => console.log('See all playlists')}
+          >
+            <MyPlaylistSection 
+              playlists={Array.isArray(myPlaylist) ? myPlaylist : []}
+              onPlaylistClick={handlePlaylistClick}
+            />
+          </ContentSection>
+
+          <ContentSection 
+            title="Artist Playlists"
+            onSeeAll={() => console.log('See all artists')}
+          >
+            <ArtistPlaylistSection 
+              artists={Array.isArray(playlist) ? playlist : []}
+              onArtistClick={handleArtistClick}
+            />
+          </ContentSection>
+         
           <ContentSection 
             title="Made for you"
             onSeeAll={() => console.log('See all Made for you')}
           >
-            {madeForYou.map((item, index) => (
-              <MusicCard
-                key={index}
-                title={item.title}
-                description={item.description}
-                image={item.image}
-                onPlay={() => handlePlay(item)}
-              />
-            ))}
+            <SongListSection 
+              songs={songs}
+              onSongClick={handlePlay}
+              currentSong={currentSong}
+              isPlaying={false}
+            />
           </ContentSection>
 
-          <ContentSection 
-            title="Recently played"
-            onSeeAll={() => console.log('See all Recently played')}
-          >
-            {recentlyPlayed.map((item, index) => (
-              <MusicCard
-                key={index}
-                title={item.title}
-                description={item.description}
-                image={item.image}
-                onPlay={() => handlePlay(item)}
-              />
-            ))}
-          </ContentSection>
+         
         </div>
       </main>
 
@@ -157,4 +186,4 @@ const Home = () => {
   );
 };
 
-export default Home;
+export default Home; 

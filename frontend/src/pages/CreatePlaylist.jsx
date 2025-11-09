@@ -1,31 +1,34 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import './CreatePlaylist.css';
+import { useDispatch, useSelector } from 'react-redux';
+import {createMyPlaylist} from '../store/actions/musicAction.jsx'
 
 const CreatePlaylist = () => {
   const [playlistTitle, setPlaylistTitle] = useState('');
   const [selectedSongs, setSelectedSongs] = useState([]);
-  
+  const [songs, setSongs] = useState([]); 
+  const dispatch = useDispatch()
   // Sample songs data - Replace with actual API data
-  const allSongs = [
-    { id: 1, title: 'Song Title 1', artist: 'Artist Name 1', duration: '3:45', image: null },
-    { id: 2, title: 'Song Title 2', artist: 'Artist Name 2', duration: '4:20', image: null },
-    { id: 3, title: 'Song Title 3', artist: 'Artist Name 3', duration: '2:55', image: null },
-    { id: 4, title: 'Song Title 4', artist: 'Artist Name 4', duration: '3:30', image: null },
-    { id: 5, title: 'Song Title 5', artist: 'Artist Name 5', duration: '4:15', image: null },
-    { id: 6, title: 'Song Title 6', artist: 'Artist Name 6', duration: '3:10', image: null },
-    { id: 7, title: 'Song Title 7', artist: 'Artist Name 7', duration: '5:00', image: null },
-    { id: 8, title: 'Song Title 8', artist: 'Artist Name 8', duration: '3:25', image: null },
-  ];
+  const  music = useSelector((state) => state.music.musicdata);
+  useEffect(() => {
+setSongs(music);
+
+   }, [music]);
+
 
   const handleSongToggle = (songId) => {
+    const song = songs.find(s => s._id === songId);
+    
     if (selectedSongs.includes(songId)) {
       setSelectedSongs(selectedSongs.filter(id => id !== songId));
+      console.log('Removed song:', { id: songId, title: song?.title });
     } else {
       setSelectedSongs([...selectedSongs, songId]);
+      console.log('Added song:', { id: songId, title: song?.title });
     }
   };
 
-  const handleCreatePlaylist = () => {
+  const handleCreatePlaylist = async() => {
     if (!playlistTitle.trim()) {
       alert('Please enter a playlist title');
       return;
@@ -35,12 +38,25 @@ const CreatePlaylist = () => {
       return;
     }
     
+    
+    const selectedSongDetails = selectedSongs.map(songId => {
+      const song = songs.find(s => s._id === songId);
+      return {
+        id: song?._id,
+        title: song?.title
+      };
+    });
+    
     const playlistData = {
       title: playlistTitle,
-      songs: selectedSongs
+      musics: selectedSongs,
+      songDetails: selectedSongDetails
     };
     
     console.log('Creating playlist:', playlistData);
+ dispatch(createMyPlaylist(playlistData));
+   
+    
     // Add your API call here
   };
 
@@ -79,9 +95,9 @@ const CreatePlaylist = () => {
         <div className="songs-section">
           <h2 className="section-title">Select Songs</h2>
           <div className="songs-list">
-            {allSongs.map((song) => (
+            {songs.map((song,index) => (
               <div 
-                key={song.id} 
+                key={index} 
                 className={`song-item ${selectedSongs.includes(song.id) ? 'selected' : ''}`}
               >
                 <div className="song-left">
@@ -105,8 +121,8 @@ const CreatePlaylist = () => {
                   <label className="checkbox-wrapper">
                     <input
                       type="checkbox"
-                      checked={selectedSongs.includes(song.id)}
-                      onChange={() => handleSongToggle(song.id)}
+                      checked={selectedSongs.includes(song._id)}
+                      onChange={() => handleSongToggle(song._id)}
                     />
                     <span className="checkmark"></span>
                   </label>
