@@ -6,15 +6,14 @@ const cors = require('cors');
 const passport = require('passport');
 const {Strategy:GoogleStrategy}  = require('passport-google-oauth20');
 app.use(express.json());
-app.use(cookieParser()); //Request ke aane se pehle, cookies ko decode karke req.cookies me daal dena
+app.use(cookieParser()); 
 app.use(express.urlencoded({extended:true}));
 app.use(passport.initialize());
+require('dotenv').config();// always at top ise app me accesse me or sare me
 
 app.use(cors({
-  origin:"http://localhost:5173",
-  credentials:true, // its important to allow cookies to be sent
-  methods: ["GET", "POST", "PUT", "DELETE"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin:["http://localhost:5173","http://localhost:5174"], 
+  credentials:true, 
 }));
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,
