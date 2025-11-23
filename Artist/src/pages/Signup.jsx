@@ -8,7 +8,8 @@ import Card from '../components/Card';
 
 const Signup = () => {
   const [formData, setFormData] = useState({
-    name: '',
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -23,7 +24,8 @@ const Signup = () => {
   };
 
   const validateForm = () => {
-    if (!formData.name.trim()) return 'Name is required';
+    if (!formData.firstName.trim()) return 'First Name is required';
+    if (!formData.lastName.trim()) return 'Last Name is required';
     if (!formData.email.trim()) return 'Email is required';
     if (formData.password.length < 6)
       return 'Password must be at least 6 characters long';
@@ -45,21 +47,48 @@ const Signup = () => {
     setIsSubmitting(true);
     setError('');
 
-    // Simulate API call
-    setTimeout(() => {
-      alert('Account created successfully! (This is just a demo)');
-      navigate('/dashboard');
-      setIsSubmitting(false);
-    }, 1500);
+    const payload = {
+      email: formData.email,
+      password: formData.password,
+      role: "artist",               // you can change if needed
+      fullName: {
+        firstName: formData.firstName,
+        lastName: formData.lastName
+      }
+    };
+
+    try {
+      const res = await fetch("http://localhost:3000/api/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(payload)
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.message || "Registration failed");
+        setIsSubmitting(false);
+        return;
+      }
+
+      navigate("/login");
+
+    } catch (err) {
+      setError("Something went wrong");
+      console.log("Signup Error:", err);
+    }
+
+    setIsSubmitting(false);
   };
 
   const handleGoogleSignup = () => {
-    alert('Google signup would be implemented here!');
+    alert("Google signup coming soon!");
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-(--color-bg-dark) p-4 relative overflow-hidden">
-      {/* Background Blur Effect */}
       <div className="absolute top-[-20%] right-[-10%] w-[500px] h-[500px] bg-(--color-accent-green) rounded-full opacity-5 blur-[120px]"></div>
       <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] bg-blue-900 rounded-full opacity-5 blur-[120px]"></div>
 
@@ -71,11 +100,9 @@ const Signup = () => {
       >
         <Card className="backdrop-blur-md bg-(--color-bg-card)/80 border-(--color-border-subtle) shadow-2xl">
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold mb-2">Create Account</h1>
-            <p className="text-(--color-text-secondary)">Join as an artist today</p>
+            <h1 className="text-3xl font-bold mb-2">Create Artist Account</h1>
           </div>
 
-          {/* Error Display */}
           {error && (
             <motion.div
               initial={{ opacity: 0, y: -10 }}
@@ -88,17 +115,29 @@ const Signup = () => {
           )}
 
           <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+
             <Input
-              label="Full Name"
-              name="name"
-              placeholder="John Doe"
-              value={formData.name}
+              label="First Name"
+              name="firstName"
+              placeholder="John"
+              value={formData.firstName}
               onChange={handleChange}
               icon={User}
               required
               disabled={isSubmitting}
             />
-            
+
+            <Input
+              label="Last Name"
+              name="lastName"
+              placeholder="Doe"
+              value={formData.lastName}
+              onChange={handleChange}
+              icon={User}
+              required
+              disabled={isSubmitting}
+            />
+
             <Input
               label="Email"
               type="email"
@@ -110,7 +149,7 @@ const Signup = () => {
               required
               disabled={isSubmitting}
             />
-            
+
             <Input
               label="Password"
               type="password"
@@ -122,7 +161,7 @@ const Signup = () => {
               required
               disabled={isSubmitting}
             />
-            
+
             <Input
               label="Confirm Password"
               type="password"
@@ -135,9 +174,9 @@ const Signup = () => {
               disabled={isSubmitting}
             />
 
-            <Button 
-              type="submit" 
-              variant="primary" 
+            <Button
+              type="submit"
+              variant="primary"
               className="w-full mt-4"
               disabled={isSubmitting}
             >
@@ -151,8 +190,8 @@ const Signup = () => {
             <div className="h-px bg-(--color-border-subtle) flex-1"></div>
           </div>
 
-          <Button 
-            variant="google" 
+          <Button
+            variant="google"
             className="w-full flex items-center justify-center gap-3"
             onClick={handleGoogleSignup}
             disabled={isSubmitting}
