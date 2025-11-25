@@ -11,7 +11,7 @@ const upload = multer({
 router.post('/upload',authMiddlware.authArtistMiddleware,
     upload.fields([{ name: 'music', maxCount: 1 }, { name: 'coverImage', maxCount: 1 }]),musicController.uploadMusic);
 
-router.get('/me',authMiddlware.authUserMiddleware, musicController.getAllMusic);    
+router.get('/',authMiddlware.authUserMiddleware, musicController.getAllMusic);    
 router.get('/get-details/:id',authMiddlware.authUserMiddleware, musicController.getMusicById);
 router.get('/artist-music',authMiddlware.authArtistMiddleware, musicController.getArtistMusic);
 router.get('/allPlaylist',authMiddlware.authUserMiddleware,musicController.getAllPlaylists);

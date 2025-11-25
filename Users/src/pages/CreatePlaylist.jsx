@@ -1,26 +1,89 @@
-import { useState } from 'react';
-import { FaImage } from 'react-icons/fa';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 const CreatePlaylist = () => {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
-    title: '',
-    description: '',
-    cover: null
+    title: "",
+    musics: [],
   });
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    // Dummy submit - just navigate back
-    alert('Playlist created! (Dummy action)');
-    navigate('/my-playlists');
-  };
+  const [allMusic, setAllMusic] = useState([]);
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setFormData({ ...formData, cover: URL.createObjectURL(file) });
+  // ------------------------------------------------------
+  // GET all music for user (User token required)
+  // ------------------------------------------------------
+  useEffect(() => {
+    const fetchMusic = async () => {
+      try {
+        const token = localStorage.getItem("token");
+
+        const { data } = await axios.get("http://localhost:3001/api/music", 
+          {withCredentials:true}
+        );
+        
+        console.log(data.musics);
+        setAllMusic(data?.musics || []);
+      } catch (error) {
+        console.log("Error loading music:", error);
+      }
+    };
+
+    fetchMusic();
+  }, []);
+
+  // ------------------------------------------------------
+  // CREATE Playlist API call using AXIOS
+  // ------------------------------------------------------
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Console log the form data before submission
+    console.log("=== PLAYLIST CREATION DATA ===");
+    console.log("Title:", formData.title);
+    console.log("Selected Music IDs:", formData.musics);
+    console.log("Number of songs:", formData.musics.length);
+    console.log("Full form data:", formData);
+    
+    // Get selected song details for logging
+    const selectedSongs = allMusic.filter(music => formData.musics.includes(music._id));
+    console.log("Selected songs details:", selectedSongs.map(song => ({
+      id: song._id,
+      title: song.title,
+      artist: song.artist
+    })));
+    console.log("===============================");
+
+    try {
+      const token = localStorage.getItem("token");
+
+      const body = {
+        title: formData.title,
+        musics: formData.musics,
+      };
+
+      console.log("Sending to API:", body);
+
+      const res = await axios.post(
+        "http://localhost:3001/api/music/createUserPlaylist",
+        body,
+        
+        {withCredentials:true}
+      );
+
+      console.log("API Response:", res.data);
+      alert("Playlist created successfully!");
+      navigate("/my-playlists");
+    } catch (error) {
+      console.log("Error creating playlist:", error);
+
+      let msg =
+        error.response?.data?.message ||
+        "Something went wrong while creating the playlist";
+
+      alert(msg);
     }
   };
 
@@ -28,45 +91,10 @@ const CreatePlaylist = () => {
     <div className="px-4 py-6 md:p-6 max-w-2xl mx-auto">
       <h1 className="text-4xl font-bold text-white mb-8">Create New Playlist</h1>
 
-      <form onSubmit={handleSubmit} className="bg-[#181818] rounded-lg p-6 md:p-8 space-y-6">
-        {/* Cover Upload */}
-        <div>
-          <label className="block text-white font-semibold mb-3">
-            Playlist Cover
-          </label>
-          <div className="flex flex-col sm:flex-row items-start gap-6">
-            <div className="w-40 h-40 bg-[#282828] rounded-lg flex items-center justify-center overflow-hidden">
-              {formData.cover ? (
-                <img
-                  src={formData.cover}
-                  alt="Playlist cover"
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <FaImage className="text-6xl text-[#b3b3b3]" />
-              )}
-            </div>
-            <div>
-              <label
-                htmlFor="cover-upload"
-                className="bg-[#1db954] text-black px-6 py-3 rounded-full font-semibold cursor-pointer hover:scale-105 transition-transform inline-block"
-              >
-                Choose Image
-              </label>
-              <input
-                id="cover-upload"
-                type="file"
-                accept="image/*"
-                onChange={handleImageUpload}
-                className="hidden"
-              />
-              <p className="text-[#b3b3b3] text-sm mt-2">
-                Recommended: Square image, at least 300x300px
-              </p>
-            </div>
-          </div>
-        </div>
-
+      <form
+        onSubmit={handleSubmit}
+        className="bg-[#181818] rounded-lg p-6 md:p-8 space-y-6"
+      >
         {/* Title Input */}
         <div>
           <label className="block text-white font-semibold mb-3">
@@ -75,27 +103,84 @@ const CreatePlaylist = () => {
           <input
             type="text"
             value={formData.title}
-            onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+            onChange={(e) =>
+              setFormData({ ...formData, title: e.target.value })
+            }
             placeholder="My Awesome Playlist"
             required
             className="w-full bg-[#282828] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1db954] placeholder-[#b3b3b3]"
           />
         </div>
 
-        {/* Description Textarea */}
+        {/* Music Checkbox Selection */}
         <div>
           <label className="block text-white font-semibold mb-3">
-            Description
+            Select Songs <span className="text-[#1db954]">*</span>
           </label>
-          <textarea
-            value={formData.description}
-            onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-            placeholder="Tell us about your playlist..."
-            rows={4}
-            className="w-full bg-[#282828] text-white px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#1db954] placeholder-[#b3b3b3] resize-none"
-          />
+
+          <div className="bg-[#282828] rounded-lg p-4 max-h-80 overflow-y-auto">
+            {allMusic.length === 0 ? (
+              <p className="text-[#b3b3b3] text-center py-4">No songs available</p>
+            ) : (
+              <div className="space-y-4">
+                {allMusic.map((music) => (
+                  <div key={music._id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-[#383838] transition-colors">
+                    <input
+                      type="checkbox"
+                      id={music._id}
+                      checked={formData.musics.includes(music._id)}
+                      onChange={(e) => {
+                        const musicId = music._id;
+                        let updatedMusics;
+                        
+                        if (e.target.checked) {
+                          // Add to selection
+                          updatedMusics = [...formData.musics, musicId];
+                        } else {
+                          // Remove from selection
+                          updatedMusics = formData.musics.filter(id => id !== musicId);
+                        }
+                        
+                        setFormData({ ...formData, musics: updatedMusics });
+                        console.log("Selected songs:", updatedMusics);
+                      }}
+                      className="w-5 h-5 text-[#1db954] bg-[#181818] border-[#404040] rounded focus:ring-[#1db954] focus:ring-2 shrink-0"
+                    />
+                    
+                    {/* Cover Image */}
+                    <div className="w-12 h-12 shrink-0">
+                      <img
+                        src={music.coverUrl || music.cover || "https://placehold.co/48x48/404040/ffffff?text=♪"}
+                        alt={music.title}
+                        className="w-full h-full object-cover rounded-md"
+                        onError={(e) => {
+                          e.target.src = "https://placehold.co/48x48/404040/ffffff?text=♪";
+                        }}
+                      />
+                    </div>
+                    
+                    <label 
+                      htmlFor={music._id} 
+                      className="flex-1 cursor-pointer"
+                    >
+                      <div className="text-white hover:text-[#1db954] transition-colors">
+                        <div className="font-medium text-sm leading-tight">{music.title}</div>
+                        <div className="text-[#b3b3b3] text-xs mt-1">{music.artist}</div>
+                      </div>
+                    </label>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <p className="text-[#b3b3b3] text-sm mt-2">
+            Selected: {formData.musics.length} song{formData.musics.length !== 1 ? 's' : ''}
+          </p>
         </div>
 
+        {/* Description */}
+       
         {/* Buttons */}
         <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 pt-4">
           <button
@@ -104,6 +189,7 @@ const CreatePlaylist = () => {
           >
             Create Playlist
           </button>
+
           <button
             type="button"
             onClick={() => navigate(-1)}

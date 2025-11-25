@@ -11,7 +11,7 @@ const SongCard = ({ song }) => {
     >
       <div className="relative mb-4">
         <img
-          src={song.cover}
+          src={song.coverUrl}
           alt={song.title}
           className="w-full aspect-square object-cover rounded-md"
         />

@@ -14,9 +14,12 @@ const Home = () => {
     try {
       if (!loadMore) setLoading(true);
       
-      const response = await axios.get(`http://localhost:3001/api/music/`);
-      console.log(response)
+      const response = await axios.get('http://localhost:3001/api/music',{
+        withCredentials: true,
+      });
+      // console.log(response)
       // const newSongs = response.data.musics || [];
+      setSongs(response.data.musics || []);
       
       if (loadMore) {
         setSongs(prevSongs => [...prevSongs, ...newSongs]);

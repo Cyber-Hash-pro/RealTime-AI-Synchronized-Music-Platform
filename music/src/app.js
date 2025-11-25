@@ -4,7 +4,7 @@ const cookierParser = require('cookie-parser');
 const cors = require('cors');
 const app = express();
 app.use(express.json());
-app.use(cookierParser());
+app.use(cookierParser()); // it help to send and receive cookies important
 app.use(express.urlencoded({ extended: true })); // for file uploads also handle urlencoded data
 app.use(cors(
 {

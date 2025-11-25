@@ -9,6 +9,7 @@ const PlaylistCard = ({ playlist }) => {
       onClick={() => navigate(`/playlist/${playlist.id}`)}
       className="bg-[#181818] p-4 rounded-lg hover:bg-[#282828] transition-all duration-300 cursor-pointer group"
     >
+
       <div className="relative mb-4">
         <img
           src={playlist.cover}
