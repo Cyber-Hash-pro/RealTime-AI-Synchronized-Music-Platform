@@ -6,7 +6,7 @@ const SongCard = ({ song }) => {
 
   return (
     <div
-      onClick={() => navigate(`/song/${song.id}`)}
+      onClick={() => navigate(`/song/${song._id}`)}
       className="bg-[#181818] p-4 rounded-lg hover:bg-[#282828] transition-all duration-300 cursor-pointer group"
     >
       <div className="relative mb-4">

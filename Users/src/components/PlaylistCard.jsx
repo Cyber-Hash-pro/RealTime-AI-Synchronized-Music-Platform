@@ -13,7 +13,7 @@ const PlaylistCard = ({ playlist }) => {
       <div className="relative mb-4">
         <img
           src={playlist.cover}
-          alt={playlist.name}
+          alt={playlist.title}
           className="w-full aspect-square object-cover rounded-md"
         />
         {/* Play Button - Shows on hover with float-up effect */}
@@ -24,10 +24,10 @@ const PlaylistCard = ({ playlist }) => {
         </div>
       </div>
       <h3 className="text-white font-semibold text-base mb-1 truncate">
-        {playlist.name}
+        {playlist.title}
       </h3>
       <p className="text-[#b3b3b3] text-sm">
-        By {playlist.creator} • {playlist.songCount} songs
+        By {playlist.artist} • {playlist.songCount} songs
       </p>
     </div>
   );

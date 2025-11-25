@@ -1,9 +1,24 @@
+import { useEffect, useState } from 'react';
 import PlaylistCard from '../components/PlaylistCard';
 import { playlists } from '../data/dummyData';
+import axios from 'axios';
 
 const ArtistPlaylists = () => {
   // Filter playlists created by artists (not users)
-  const artistPlaylists = playlists.filter(p => p.creator !== 'You');
+
+  const [artistPlaylists,setArtistPlaylists] = useState([])
+  const fetchUSerPlaylists = async() =>{
+    const {data} = await  axios.get('http://localhost:3001/api/music/allPlaylist',{
+      withCredentials:true,
+    })
+    console.log(data);
+    setArtistPlaylists(data?.playlists)
+    
+  } 
+  useEffect(() => {
+    fetchUSerPlaylists();
+  },[])
+
 
   return (
     <div className="px-4 py-6 sm:p-6">
@@ -12,7 +27,7 @@ const ArtistPlaylists = () => {
       
       <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6">
         {artistPlaylists.map((playlist) => (
-          <PlaylistCard key={playlist.id} playlist={playlist} />
+          <PlaylistCard key={playlist.id} playlist={playlist}  />
         ))}
       </div>
     </div>

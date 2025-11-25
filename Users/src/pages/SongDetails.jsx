@@ -1,14 +1,37 @@
 import { useParams } from 'react-router-dom';
 import { FaPlay, FaHeart, FaShare } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
 import SongCard from '../components/SongCard';
 import { songs } from '../data/dummyData';
 
 const SongDetails = () => {
   const { id } = useParams();
   const song = songs.find(s => s.id === parseInt(id)) || songs[0];
+  const [isLiked, setIsLiked] = useState(false);
+  const [likes, setLikes] = useState(song.likes || 0);
   
   // Get related songs (filter by same artist or random songs)
   const relatedSongs = songs.filter(s => s.id !== song.id).slice(0, 6);
+
+  const handleLike = () => {
+    if (isLiked) {
+      setLikes(prev => Math.max(0, prev - 1));
+      setIsLiked(false);
+      // TODO: Call API to unlike song
+      console.log('Unlike song:', song.id);
+    } else {
+      setLikes(prev => prev + 1);
+      setIsLiked(true);
+      // TODO: Call API to like song
+      console.log('Like song:', song.id);
+    }
+  };
+
+  // Reset like state when song changes
+  useEffect(() => {
+    setIsLiked(false);
+    setLikes(song.likes || 0);
+  }, [song.id, song.likes]);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-[#1a5c3c] via-[#121212] to-[#121212]">
@@ -44,9 +67,16 @@ const SongDetails = () => {
           <FaPlay className="text-base" />
           <span>Play</span>
         </button>
-        <button className="border-2 border-[#7f7f7f] text-white px-8 py-3.5 rounded-full font-semibold hover:border-white hover:scale-105 transition-transform flex items-center justify-center gap-2 text-base bg-white/5 w-full sm:w-auto">
-          <FaHeart className="text-base" />
-          <span>Like</span>
+        <button 
+          onClick={handleLike}
+          className={`border-2 px-8 py-3.5 rounded-full font-semibold hover:scale-105 transition-all flex items-center justify-center gap-2 text-base w-full sm:w-auto ${
+            isLiked 
+              ? 'border-[#1db954] text-[#1db954] bg-[#1db954]/10' 
+              : 'border-[#7f7f7f] text-white hover:border-white bg-white/5'
+          }`}
+        >
+          <FaHeart className={`text-base ${isLiked ? 'text-[#1db954]' : ''}`} />
+          <span>{isLiked ? 'Liked' : 'Like'} {likes > 0 ? `(${likes})` : ''}</span>
         </button>
         <button className="border-2 border-[#7f7f7f] text-white px-8 py-3.5 rounded-full font-semibold hover:border-white hover:scale-105 transition-transform flex items-center justify-center gap-2 text-base bg-white/5 w-full sm:w-auto">
           <FaShare className="text-base" />

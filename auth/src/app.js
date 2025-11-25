@@ -14,6 +14,7 @@ require('dotenv').config();// always at top ise app me accesse me or sare me
 app.use(cors({
   origin:["http://localhost:5173","http://localhost:5174"], 
   credentials:true, 
+  // withCredentials:true,
 }));
 passport.use(new GoogleStrategy({
   clientID: process.env.GOOGLE_CLIENT_ID,

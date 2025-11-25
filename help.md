@@ -2,7 +2,23 @@
 user and dashbord ek notification types jab new song add hoga queue broker ka use kar ke 
 Frontend url Withcarditon true karna dyan rakanaPerfect — you want to create your own **AI Music Buddy** app with **2 main features**:
 
----
+---<div className="relative mb-4">
+        <img
+          src={song.coverUrl}
+          alt={song.title}
+          className="w-full aspect-square object-cover rounded-md"
+        />
+        {/* Play Button - Shows on hover */}
+        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+          <button className="bg-[#1db954] text-black p-4 rounded-full shadow-lg hover:scale-110 transform transition-transform">
+            <FaPlay className="text-xl ml-1" />
+          </button>
+        </div>
+      </div>
+      <h3 className="text-white font-semibold text-base mb-1 truncate">
+        {song.title}
+      </h3>
+      <p className="text-[#b3b3b3] text-sm truncate">{song.artist}</p>
 
 ### 🎧 **Feature 1: Voice-Controlled Music Player**
 

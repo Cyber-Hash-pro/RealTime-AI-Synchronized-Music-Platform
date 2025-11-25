@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FaHome, FaMusic, FaList, FaPlus, FaSignOutAlt } from 'react-icons/fa';
+import { FaHome, FaList, FaPlus, FaSignOutAlt, FaHeart } from 'react-icons/fa';
 import { MdLibraryMusic } from 'react-icons/md';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -7,7 +7,7 @@ const Sidebar = ({ isOpen, onClose }) => {
 
   const navItems = [
     { path: '/', label: 'Home', icon: <FaHome /> },
-    { path: '/playlists', label: 'Public Playlists', icon: <FaMusic /> },
+    { path: '/liked-songs', label: 'Liked Songs', icon: <FaHeart /> },
     { path: '/artist-playlists', label: 'Artist Playlists', icon: <MdLibraryMusic /> },
   ];
 
