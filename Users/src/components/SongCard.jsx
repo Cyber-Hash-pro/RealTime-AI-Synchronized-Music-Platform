@@ -1,9 +1,18 @@
 import { FaPlay } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-
+import { useDispatch, useSelector } from 'react-redux';
+import { specificMusicData } from '../Store/actions/musicaction.jsx'
+import { useEffect } from 'react';
 const SongCard = ({ song }) => {
   const navigate = useNavigate();
-console.log(song)
+  const dispatch = useDispatch();
+  const musicData = useSelector((state) => state.music);
+  console.log("Next songa or Fetch songs :->",musicData)
+  useEffect (() => {
+    dispatch(specificMusicData(song._id));
+
+  }, [song._id, dispatch]);
+    
   return (
     <div
       onClick={() => navigate(`/song/${song._id}`)}

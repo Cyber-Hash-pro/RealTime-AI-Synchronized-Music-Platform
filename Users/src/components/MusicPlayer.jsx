@@ -24,7 +24,11 @@ const MusicPlayer = () => {
       volume: { '--range-progress': `${volumePercent}%` }
     };
   }, [currentTime, duration, volume]);
-
+const nextplay=()=>{
+  // Logic to play the next song
+  alert("next song")
+  
+} 
   // Sync audio element with playing state
   useEffect(() => {
     if (audioRef.current) {
@@ -98,7 +102,7 @@ const MusicPlayer = () => {
                 <FaPlay className="text-base lg:text-lg ml-0.5" />
               )}
             </button>
-            <button className="text-[#b3b3b3] hover:text-white transition-colors">
+            <button onClick={nextplay} className="text-[#b3b3b3] hover:text-white transition-colors">
               <FaStepForward className="text-base lg:text-lg" />
             </button>
             <button className="text-[#b3b3b3] hover:text-white transition-colors hidden lg:block">

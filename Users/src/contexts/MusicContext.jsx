@@ -52,10 +52,6 @@ export const MusicProvider = ({ children }) => {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-
-
-
-  
   const value = {
     currentSong,
     isPlaying,
@@ -73,7 +69,7 @@ export const MusicProvider = ({ children }) => {
     setIsPlaying,
     formatTime
   };
-  
+
   return (
     <MusicContext.Provider value={value}>
       {children}

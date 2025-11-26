@@ -1,13 +1,34 @@
-import axios from 'axios';
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaPlay, FaPause, FaHeart, FaShare, FaArrowLeft, FaVolumeUp, FaRandom, FaRedo } from 'react-icons/fa';
 import { useMusicPlayer } from '../contexts/MusicContext';
+import { useDispatch, useSelector } from 'react-redux';
+import { fetchMusicData, specificMusicData } from '../Store/actions/musicaction.jsx';
 import SongCard from '../components/SongCard';
+
+
+
 
 const SongDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const [songData ,songsetdata]=useState()
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const result = await dispatch(specificMusicData(id));
+        songsetdata(result);
+      } catch (error) {
+        console.error('Error fetching song data:', error);
+      }
+    };
+    fetchData();
+  }, [id, dispatch]);
+  // Redux state
+  const { currentMusic, allMusic } = useSelector((state) => state.music);
+  console.log("----------------------------->", songData, allMusic);
+
   const {
     currentSong,
     isPlaying,
@@ -19,29 +40,23 @@ const SongDetails = () => {
     setVolumeLevel,
     formatTime
   } = useMusicPlayer();
-  
-  const [songData, setSongData] = useState(null);
+
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [allSongs, setAllSongs] = useState([]);
-  const [songsLoading, setSongsLoading] = useState(false);
+
+  // Filter all songs to get recommendations (excluding current song)
+  const allSongs = allMusic ? allMusic.filter(song => song._id !== id).slice(0, 6) : [];
 
   // Check if this song is currently playing
   const isCurrentSong = currentSong && currentSong._id === songData?._id;
 
-  // Fetch song data
+  // Fetch song data using Redux
   const fetchSong = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`http://localhost:3001/api/music/get-details/${id}`, {
-        withCredentials: true
-      });
-      
-      if (response.data.message === "Music fetched successfully") {
-        setSongData(response.data.music);
-        setError(null);
-      }
+      await dispatch(specificMusicData(id));
+      setError(null);
     } catch (error) {
       console.error('Error fetching song:', error);
       setError('Failed to load song details');
@@ -50,41 +65,29 @@ const SongDetails = () => {
     }
   };
 
-  // Fetch all songs for recommendations
+  // Fetch all songs for recommendations using Redux
   const fetchAllSongs = async () => {
     try {
-      setSongsLoading(true);
-      const response = await axios.get('http://localhost:3001/api/music/', {
-        withCredentials: true
-      });
-      
-      if (response.data.message === "Music fetched successfully") {
-        // Filter out the current song and limit to 6 songs
-        const filteredSongs = response.data.musics
-          .filter(song => song._id !== id)
-          .slice(0, 6);
-        setAllSongs(filteredSongs);
-      }
+      await dispatch(fetchMusicData());
     } catch (error) {
       console.error('Error fetching songs:', error);
-    } finally {
-      setSongsLoading(false);
     }
   };
 
   // Auto-play when song data loads
   useEffect(() => {
-    if (songData) {
-      // playSong(songData);
-      
+    if (songData && allSongs.length > 0) {
+      // Create playlist with current song and all other songs
+      const fullPlaylist = [songData, ...allSongs];
+      playSong(songData, fullPlaylist);
     }
-  }, [songData, playSong]);
+  }, [songData, allSongs.length]);
 
   // Fetch song on component mount
   useEffect(() => {
     fetchSong();
     fetchAllSongs();
-  }, [id]);
+  }, [id, dispatch]);
 
   // Audio event handlers
   const handlePlayPause = () => {
@@ -232,12 +235,7 @@ const SongDetails = () => {
         <div className="mb-8">
           <h2 className="text-white text-2xl font-bold mb-6">Next Songs</h2>
           
-          {songsLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="w-8 h-8 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin"></div>
-              <span className="text-white ml-3">Loading songs...</span>
-            </div>
-          ) : allSongs.length > 0 ? (
+          {allSongs.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {allSongs.map((song) => (
                 <SongCard key={song._id} song={song} />
@@ -256,3 +254,23 @@ const SongDetails = () => {
 };
 
 export default SongDetails;
+        // <div className="mb-8">
+        //   <h2 className="text-white text-2xl font-bold mb-6">Next Songs</h2>
+          
+        //   {songsLoading ? (
+        //     <div className="flex items-center justify-center py-8">
+        //       <div className="w-8 h-8 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin"></div>
+        //       <span className="text-white ml-3">Loading songs...</span>
+        //     </div>
+        //   ) : allSongs.length > 0 ? (
+        //     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        //       {allSongs.map((song) => (
+        //         <SongCard key={song._id} song={song} />
+        //       ))}
+        //     </div>
+        //   ) : (
+        //     <div className="text-center py-8">
+        //       <p className="text-[#b3b3b3] text-lg">No more songs available</p>
+        //     </div>
+        //   )}
+        // </div>
