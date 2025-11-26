@@ -35,7 +35,7 @@ const Login = () => {
       alert('Login successful!');
       console.log('User Logged In:', res.data);
 
-      navigate('/artist/dashboard');
+      navigate('/');
 
     } catch (err) {
       console.error('Login Error:', err);

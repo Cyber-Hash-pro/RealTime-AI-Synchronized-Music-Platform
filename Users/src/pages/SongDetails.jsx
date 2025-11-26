@@ -24,6 +24,8 @@ const SongDetails = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [allSongs, setAllSongs] = useState([]);
+  const [songsLoading, setSongsLoading] = useState(false);
 
   // Check if this song is currently playing
   const isCurrentSong = currentSong && currentSong._id === songData?._id;
@@ -48,16 +50,40 @@ const SongDetails = () => {
     }
   };
 
+  // Fetch all songs for recommendations
+  const fetchAllSongs = async () => {
+    try {
+      setSongsLoading(true);
+      const response = await axios.get('http://localhost:3001/api/music/', {
+        withCredentials: true
+      });
+      
+      if (response.data.message === "Music fetched successfully") {
+        // Filter out the current song and limit to 6 songs
+        const filteredSongs = response.data.musics
+          .filter(song => song._id !== id)
+          .slice(0, 6);
+        setAllSongs(filteredSongs);
+      }
+    } catch (error) {
+      console.error('Error fetching songs:', error);
+    } finally {
+      setSongsLoading(false);
+    }
+  };
+
   // Auto-play when song data loads
   useEffect(() => {
     if (songData) {
-      playSong(songData);
+      // playSong(songData);
+      
     }
   }, [songData, playSong]);
 
   // Fetch song on component mount
   useEffect(() => {
     fetchSong();
+    fetchAllSongs();
   }, [id]);
 
   // Audio event handlers
@@ -66,30 +92,13 @@ const SongDetails = () => {
       togglePlayPause();
     } else {
       playSong(songData);
+      // isPlaying(false)
     }
   };
 
-  const handleSeek = (e) => {
-    const progressBar = e.currentTarget;
-    const clickX = e.nativeEvent.offsetX;
-    const width = progressBar.offsetWidth;
-    const newTime = (clickX / width) * duration;
-    
-    // Use context seekTo method
-    if (isCurrentSong && duration) {
-      const { seekTo } = useMusicPlayer();
-      seekTo(newTime);
-    }
-  };
-
-  const handleVolumeChange = (e) => {
-    const newVolume = parseFloat(e.target.value);
-    setVolumeLevel(newVolume);
-  };
 
   const handleLike = () => {
     setIsLiked(!isLiked);
-    // TODO: Call API to like/unlike song
   };
 
   const getProgressPercentage = () => {
@@ -207,48 +216,9 @@ const SongDetails = () => {
         </div>
 
         {/* Progress Bar and Controls - Only show if this song is currently playing */}
-        {isCurrentSong && (
-          <div className="bg-[#181818] rounded-lg p-6 mb-8">
-            <div className="flex items-center gap-4 mb-4">
-              <span className="text-[#b3b3b3] text-sm min-w-10">
-                {formatTime(currentTime)}
-              </span>
-              <div 
-                className="flex-1 h-2 bg-[#4f4f4f] rounded-full cursor-pointer relative"
-                onClick={handleSeek}
-              >
-                <div 
-                  className="absolute top-0 left-0 h-full bg-[#1db954] rounded-full transition-all"
-                  style={{ width: `${getProgressPercentage()}%` }}
-                />
-                <div 
-                  className="absolute top-1/2 w-4 h-4 bg-white rounded-full shadow-lg transform -translate-y-1/2 transition-all hover:scale-125"
-                  style={{ left: `${getProgressPercentage()}%`, transform: 'translate(-50%, -50%)' }}
-                />
-              </div>
-              <span className="text-[#b3b3b3] text-sm min-w-10">
-                {formatTime(duration)}
-              </span>
-            </div>
-            
-            {/* Volume Control */}
-            <div className="flex items-center gap-3">
-              <FaVolumeUp className="text-[#b3b3b3]" />
-              <input
-                type="range"
-                min="0"
-                max="1"
-                step="0.1"
-                value={volume}
-                onChange={handleVolumeChange}
-                className="w-24 accent-[#1db954]"
-              />
-            </div>
-          </div>
-        )}
 
         {/* Song Info */}
-        <div className="bg-[#181818] rounded-lg p-6">
+        <div className="bg-[#181818] rounded-lg p-6 mb-8">
           <h3 className="text-white text-xl font-bold mb-4">About this song</h3>
           <div className="space-y-3 text-[#b3b3b3]">
             <p><span className="text-white font-medium">Artist:</span> {songData.artist}</p>
@@ -257,6 +227,29 @@ const SongDetails = () => {
             <p><span className="text-white font-medium">File Format:</span> MP3</p>
           </div>
         </div>
+
+        {/* Next Songs Section */}
+        <div className="mb-8">
+          <h2 className="text-white text-2xl font-bold mb-6">Next Songs</h2>
+          
+          {songsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <div className="w-8 h-8 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin"></div>
+              <span className="text-white ml-3">Loading songs...</span>
+            </div>
+          ) : allSongs.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {allSongs.map((song) => (
+                <SongCard key={song._id} song={song} />
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-[#b3b3b3] text-lg">No more songs available</p>
+            </div>
+          )}
+        </div>
+
       </div>
     </div>
   );
