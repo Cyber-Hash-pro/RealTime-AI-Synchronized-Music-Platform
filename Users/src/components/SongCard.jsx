@@ -1,18 +1,9 @@
 import { FaPlay } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
-import { specificMusicData } from '../Store/actions/musicaction.jsx'
-import { useEffect } from 'react';
+
 const SongCard = ({ song }) => {
   const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const musicData = useSelector((state) => state.music);
-  console.log("Next songa or Fetch songs :->",musicData)
-  useEffect (() => {
-    dispatch(specificMusicData(song._id));
 
-  }, [song._id, dispatch]);
-    
   return (
     <div
       onClick={() => navigate(`/song/${song._id}`)}
@@ -24,7 +15,6 @@ const SongCard = ({ song }) => {
           alt={song.title}
           className="w-full aspect-square object-cover rounded-md"
         />
-        {/* Play Button - Shows on hover */}
         <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
           <button className="bg-[#1db954] text-black p-4 rounded-full shadow-lg hover:scale-110 transform transition-transform">
             <FaPlay className="text-xl ml-1" />
