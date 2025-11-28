@@ -59,6 +59,7 @@ const nextplay=()=>{
   if (!currentSong) {
     return null;
   }
+  console.log('Current Song in Player:', currentSong);
 
   return (
     <div className="fixed bottom-0 left-0 lg:left-[250px] right-0 bg-[#181818] border-t border-[#282828] px-2 lg:px-4 py-2 lg:py-3 z-50">

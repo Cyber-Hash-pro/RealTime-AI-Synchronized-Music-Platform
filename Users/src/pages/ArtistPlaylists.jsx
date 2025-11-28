@@ -1,23 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import PlaylistCard from '../components/PlaylistCard';
-import { playlists } from '../data/dummyData';
-import axios from 'axios';
+import { artistPlaylistFetch } from '../Store/actions/musicaction.jsx';
 
 const ArtistPlaylists = () => {
-  // Filter playlists created by artists (not users)
+  const dispatch = useDispatch();
+  const { artistPlaylist } = useSelector((state) => state.music);
 
-  const [artistPlaylists,setArtistPlaylists] = useState([])
-  const fetchUSerPlaylists = async() =>{
-    const {data} = await  axios.get('http://localhost:3001/api/music/allPlaylist',{
-      withCredentials:true,
-    })
-    console.log(data);
-    setArtistPlaylists(data?.playlists)
-    
-  } 
   useEffect(() => {
-    fetchUSerPlaylists();
-  },[])
+    dispatch(artistPlaylistFetch());
+  }, [dispatch]);
 
 
   return (
@@ -26,8 +18,8 @@ const ArtistPlaylists = () => {
       <p className="text-[#b3b3b3] mb-6">Curated playlists by your favorite artists</p>
       
       <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6">
-        {artistPlaylists.map((playlist) => (
-          <PlaylistCard key={playlist.id} playlist={playlist}  />
+        {artistPlaylist && artistPlaylist.map((playlist) => (
+          <PlaylistCard key={playlist._id || playlist.id} playlist={playlist} />
         ))}
       </div>
     </div>
