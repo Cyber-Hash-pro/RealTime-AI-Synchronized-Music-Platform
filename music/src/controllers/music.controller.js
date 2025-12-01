@@ -5,7 +5,7 @@ const UserPlaylist = require('../model/userplaylist.model.js');
 
 const uploadMusic = async(req,res)=>{
 // console.log(req)
-console.log('Files received:', req);
+// console.log('Files received:', req);
 const coverImageFile = req.files['coverImage'][0];
 const musicFile = req.files['music'][0];
 
@@ -169,6 +169,18 @@ const getUserPlaylists = async(req,res)=>{
 
     }
 }   
+const getSpecificUserPlaylists = async(req,res)=>{
+    const userId = req.params.id;
+    console.log("Fetching playlists for user ID:", userId);
+    try{
+        const playlists = await UserPlaylist.find({userId:userId});
+        return res.status(200).json({message:"Specific User Playlists fetched successfully", playlists:playlists})
+    }catch(error){
+        console.log("Error in fetching specific user playlists", error);
+        return res.status(500).json({message:"Internal server error", error})
+    }
+}
 
 
-module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById,getAllPlaylists,createUserPlaylist,getUserPlaylists};
+
+module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById,getAllPlaylists,createUserPlaylist,getUserPlaylists,getSpecificUserPlaylists};

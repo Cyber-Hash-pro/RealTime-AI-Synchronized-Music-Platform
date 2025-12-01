@@ -12,7 +12,7 @@ app.use(passport.initialize());
 require('dotenv').config();// always at top ise app me accesse me or sare me
 
 app.use(cors({
-  origin:["http://localhost:5173","http://localhost:5174"], 
+  origin:["http://localhost:5173","http://localhost:5174",'http://10.66.177.241:5173/'], 
   credentials:true, 
   // withCredentials:true,
 }));

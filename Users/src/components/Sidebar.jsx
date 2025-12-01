@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FaHome, FaList, FaPlus, FaSignOutAlt, FaHeart } from 'react-icons/fa';
+import { FaHome, FaList, FaPlus, FaSignOutAlt, FaHeart, FaUsers, FaBroadcastTower, FaCrown } from 'react-icons/fa';
 import { MdLibraryMusic } from 'react-icons/md';
 
 const Sidebar = ({ isOpen, onClose }) => {
@@ -14,6 +14,11 @@ const Sidebar = ({ isOpen, onClose }) => {
   const libraryItems = [
     { path: '/my-playlists', label: 'My Playlists', icon: <FaList /> },
     { path: '/create-playlist', label: 'Create Playlist', icon: <FaPlus /> },
+  ];
+
+  const socialItems = [
+    { path: '/join-friends', label: 'Broadcast Music', icon: <FaBroadcastTower /> },
+    { path: '/control-room/demo', label: 'Control Room', icon: <FaCrown /> },
   ];
 
   const handleLogout = () => {
@@ -82,8 +87,34 @@ const Sidebar = ({ isOpen, onClose }) => {
           <div className="border-t border-[#282828] my-5"></div>
 
           {/* Library Section */}
+          <p className="px-4 text-xs font-semibold text-[#808080] uppercase tracking-wider mb-2">Your Library</p>
           <div className="space-y-1">
             {libraryItems.map((item) => (
+              <NavLink
+                key={item.path}
+                to={item.path}
+                onClick={onClose}
+                className={({ isActive }) =>
+                  `flex items-center gap-3 px-4 py-3 rounded-lg transition-all duration-200 ${
+                    isActive 
+                      ? 'bg-[#282828] text-white border-l-4 border-[#1db954] pl-3' 
+                      : 'text-[#b3b3b3] hover:text-white hover:bg-[#181818]'
+                  }`
+                }
+              >
+                <span className="text-[18px] min-w-5 flex items-center justify-center shrink-0">{item.icon}</span>
+                <span className="font-medium text-[15px] leading-none">{item.label}</span>
+              </NavLink>
+            ))}
+          </div>
+
+          {/* Divider */}
+          <div className="border-t border-[#282828] my-5"></div>
+
+          {/* Social Section */}
+          <p className="px-4 text-xs font-semibold text-[#808080] uppercase tracking-wider mb-2">Your Own</p>
+          <div className="space-y-1">
+            {socialItems.map((item) => (
               <NavLink
                 key={item.path}
                 to={item.path}

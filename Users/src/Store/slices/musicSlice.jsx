@@ -1,10 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { userPlaylists } from "../../data/dummyData";
 
 const initialState = {
   currentMusic: null,
   allMusic: [],
   playlist:[],
-  artistPlaylist:[]
+  artistPlaylist:[],
 };
 
 const musicSlice = createSlice({
@@ -23,10 +24,11 @@ const musicSlice = createSlice({
     },
     setArtistPlaylist: (state, action) => {
       state.artistPlaylist = action.payload;
-    }
+    },
+
   }
 });
 
 
-export const {  setCurrentMusic, setAllMusic, setplaylist, setArtistPlaylist } = musicSlice.actions;
+export const {  setCurrentMusic, setAllMusic, setplaylist, setArtistPlaylist, setUserPlaylists } = musicSlice.actions;
 export default musicSlice.reducer;

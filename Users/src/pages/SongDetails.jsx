@@ -4,6 +4,7 @@ import { FaArrowLeft } from 'react-icons/fa';
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchMusicData, specificMusicData } from '../Store/actions/musicaction.jsx';
+import socketService from '../services/socket.service';
 import {
   SongHeader,
   SongControls,
@@ -35,6 +36,8 @@ const SongDetails = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  // np103177
+  const [isSocketConnected, setIsSocketConnected] = useState(false);
 
   // Filter all songs to get recommendations (excluding current song)
   const allSongs = allMusic ? allMusic.filter(song => song._id !== id).slice(0, 6) : [];
@@ -42,6 +45,33 @@ const SongDetails = () => {
   // Check if this song is currently playing
   const isCurrentSong = currentSong && currentSong._id === songData?._id;
 
+  // Initialize socket connection
+  useEffect(() => {
+    const socket = socketService.connect();
+    
+    socket.on('connect', () => {
+      setIsSocketConnected(true);
+    });
+
+    socket.on('disconnect', () => {
+      setIsSocketConnected(false);
+    });
+
+    // Listen for play events from other devices
+    socketService.onPlay(async (data) => {
+      console.log('Received play from another device:', data.musicId);
+      // Fetch and play the song that was played on another device
+      if (data.musicId && data.musicId !== songData?._id) {
+        await dispatch(specificMusicData(data.musicId));
+        navigate(`/song/${data.musicId}`);
+      }
+    });
+
+    return () => {
+      socketService.offPlay();
+    };
+  }, [dispatch, navigate, songData?._id]);
+// np103177
   // Fetch song data using Redux
   const fetchSong = async () => {
     try {
@@ -75,12 +105,15 @@ const SongDetails = () => {
     }
   }, [id]);
 
-  // Auto-play when song data loads
+  // Auto-play when song data loads and emit to socket
   useEffect(() => {
     if (songData && allSongs.length > 0) {
       const fullPlaylist = [songData, ...allSongs];
-      playSong(songData, fullPlaylist);
-    }
+      playSong(songData, fullPlaylist);// np103177
+      
+      // Emit play event to sync with other devices
+      socketService.emitPlay(songData._id);
+    }// np103177
   }, [songData?._id, allSongs.length]);
 
   // Event handlers
@@ -88,9 +121,11 @@ const SongDetails = () => {
     if (isCurrentSong) {
       togglePlayPause();
     } else {
-      playSong(songData);
+      playSong(songData);// np103177
+      // Emit play event when user manually plays
+      socketService.emitPlay(songData._id);
     }
-  };
+  };// np103177
 
   const handleLike = () => setIsLiked(!isLiked);
   const handleGoBack = () => navigate(-1);

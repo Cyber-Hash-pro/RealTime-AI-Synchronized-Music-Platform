@@ -31,7 +31,8 @@ const {publicToQueue}   = require('../broker/rabbit.js')
         const token = jwt.sign({
             id:newUser._id,
             role:newUser.role,
-            fullName:newUser.fullName
+            fullName:newUser.fullName,
+            email:newUser.email
         },process.env.JWT_SECRET,{expiresIn:'2d'});
             
         res.cookie('token',token)
@@ -103,7 +104,8 @@ const GoogleAuthCallback = async (req, res) => {
       {
         id: newUser._id,
         role: newUser.role,
-        fullName: newUser.fullName
+        fullName: newUser.fullName,
+        email:newUser.email
       },
       process.env.JWT_SECRET,
       { expiresIn: '2d' }
@@ -132,7 +134,8 @@ const login = async(req,res)=>{
         const token = jwt.sign({
             id:existingUser._id,
             role:existingUser.role,
-            fullName:existingUser.fullName
+            fullName:existingUser.fullName,
+            email:existingUser.email
         },process.env.JWT_SECRET,{expiresIn:'2d'});
         res.cookie('token',token);
         return res.status(200).json({message:'User logged in successfully', user:{

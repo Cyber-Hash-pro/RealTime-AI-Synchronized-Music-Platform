@@ -1,10 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaMusic, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
-import axios from 'axios';
+import { FaMusic, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { loginUser, googleAuth, clearError } from '../Store/actions/userAction';
 
 const Login = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isAuthenticated, loading, error } = useSelector((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
 
   const [formData, setFormData] = useState({
@@ -12,7 +15,19 @@ const Login = () => {
     password: ''
   });
 
-  const [loading, setLoading] = useState(false);
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Clear error on unmount
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e) => {
     setFormData({
@@ -23,26 +38,18 @@ const Login = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
 
-    try {
-      const res = await axios.post(
-        'http://localhost:3000/api/auth/login',
-        formData,
-        { withCredentials: true }
-      );
+    const result = await dispatch(loginUser(formData));
 
-      alert('Login successful!');
-      console.log('User Logged In:', res.data);
-
+    if (result.success) {
       navigate('/');
-
-    } catch (err) {
-      console.error('Login Error:', err);
-      alert(err.response?.data?.message || 'Login failed');
+    } else {
+      alert(result.message || 'Login failed');
     }
+  };
 
-    setLoading(false);
+  const handleGoogleAuth = () => {
+    googleAuth();
   };
 
   return (
@@ -129,6 +136,13 @@ const Login = () => {
               </a>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
+
             {/* Submit */}
             <button
               type="submit"
@@ -146,6 +160,15 @@ const Login = () => {
             <span className="text-[#b3b3b3] text-sm">OR</span>
             <div className="flex-1 border-t border-white/10"></div>
           </div>
+
+          {/* Google Sign In */}
+          <button
+            onClick={handleGoogleAuth}
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3.5 rounded-full transition-all hover:scale-105 shadow-lg text-base mb-4"
+          >
+            <FaGoogle className="text-xl" />
+            Continue with Google
+          </button>
 
           {/* Signup Link */}
           <div className="text-center">

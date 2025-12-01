@@ -1,11 +1,19 @@
-import { FaSearch, FaBars, FaChevronDown, FaBell, FaUser, FaCog, FaSignOutAlt, FaRobot, FaTimes, FaPalette, FaGlobe, FaMicrophone, FaLock, FaBaby } from 'react-icons/fa';
-import { user } from '../data/dummyData';
+import { FaSearch, FaBars, FaChevronDown, FaBell, FaUser, FaCog, FaSignOutAlt, FaRobot, FaTimes, FaPalette, FaGlobe, FaMicrophone, FaLock, FaBaby, FaCircle } from 'react-icons/fa';
 import { useState, useRef, useEffect } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
+import { useNavigate } from 'react-router-dom';
+import { logoutUser } from '../Store/actions/userAction';
 
 const Navbar = ({ onMenuClick }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('account');
+  const [cyberAIConnected, setCyberAIConnected] = useState(false);
   const settingsRef = useRef(null);
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  
+  // Get user from Redux store
+  const { user, isAuthenticated } = useSelector((state) => state.user);
 
   // Close settings when clicking outside
   useEffect(() => {
@@ -18,6 +26,31 @@ const Navbar = ({ onMenuClick }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const handleLogout = async () => {
+    await dispatch(logoutUser());
+    setIsSettingsOpen(false);
+    navigate('/login');
+  };
+
+  // Get user display info
+  const getUserName = () => {
+    if (user?.fullName) {
+      return `${user.fullName.firstName} ${user.fullName.lastName}`;
+    }
+    return 'Guest';
+  };
+
+  const getUserInitials = () => {
+    if (user?.fullName) {
+      return `${user.fullName.firstName?.charAt(0) || ''}${user.fullName.lastName?.charAt(0) || ''}`.toUpperCase();
+    }
+    return 'G';
+  };
+
+  const getUserAvatar = () => {
+    return `https://placehold.co/100x100/1db954/ffffff?text=${getUserInitials()}`;
+  };
 
   const SettingsModal = () => {
     const sidebarItems = [
@@ -124,6 +157,18 @@ const Navbar = ({ onMenuClick }) => {
             <div>
               <h3 className="text-white text-xl font-semibold mb-6">Cyber AI Assistant</h3>
               
+              {/* Connection Status */}
+              <div className={`flex items-center gap-3 p-4 rounded-lg mb-6 ${
+                cyberAIConnected 
+                  ? 'bg-green-500/10 border border-green-500/30' 
+                  : 'bg-red-500/10 border border-red-500/30'
+              }`}>
+                <FaCircle className={`text-xs ${cyberAIConnected ? 'text-green-500' : 'text-red-500'} animate-pulse`} />
+                <span className={`font-medium ${cyberAIConnected ? 'text-green-400' : 'text-red-400'}`}>
+                  {cyberAIConnected ? 'Connected to Cyber-AI' : 'Not yet connected to Cyber-AI'}
+                </span>
+              </div>
+              
               <div className="bg-gradient-to-r from-blue-500/10 to-purple-600/10 border border-blue-500/20 rounded-lg p-6 mb-6">
                 <div className="flex items-center gap-4 mb-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
@@ -171,8 +216,15 @@ const Navbar = ({ onMenuClick }) => {
                 </div>
               </div>
 
-              <button className="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all">
-                Chat with Cyber-AI Now
+              <button 
+                onClick={() => setCyberAIConnected(!cyberAIConnected)}
+                className={`w-full font-semibold py-3 px-6 rounded-lg transition-all ${
+                  cyberAIConnected 
+                    ? 'bg-red-500/20 text-red-400 border border-red-500/30 hover:bg-red-500/30' 
+                    : 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
+                }`}
+              >
+                {cyberAIConnected ? 'Disconnect from Cyber-AI' : 'Connect to Cyber-AI'}
               </button>
             </div>
           </div>
@@ -182,7 +234,34 @@ const Navbar = ({ onMenuClick }) => {
       return (
         <div className="space-y-6">
           <h3 className="text-white text-xl font-semibold">Account Settings</h3>
-          <p className="text-[#b3b3b3]">Manage your account preferences and settings.</p>
+          
+          {/* User Profile Card */}
+          <div className="bg-[#1a1a1a] rounded-lg p-6 border border-[#282828]">
+            <div className="flex items-center gap-4 mb-4">
+              <img
+                src={getUserAvatar()}
+                alt={getUserName()}
+                className="w-16 h-16 rounded-full ring-2 ring-[#1db954]"
+              />
+              <div>
+                <h4 className="text-white font-semibold text-lg">{getUserName()}</h4>
+                <p className="text-[#b3b3b3] text-sm">{user?.email || 'No email'}</p>
+                <span className="inline-block mt-1 px-2 py-0.5 bg-[#1db954]/20 text-[#1db954] text-xs rounded-full">
+                  {user?.role === 'artist' ? 'Artist' : 'Premium'}
+                </span>
+              </div>
+            </div>
+            
+            <button 
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center gap-2 bg-red-500/10 text-red-400 border border-red-500/30 py-2.5 rounded-lg hover:bg-red-500/20 transition-colors"
+            >
+              <FaSignOutAlt />
+              Sign Out
+            </button>
+          </div>
+          
+          <p className="text-[#b3b3b3]">Manage your account preferences and settings from the sidebar menu.</p>
         </div>
       );
     };
@@ -298,14 +377,14 @@ const Navbar = ({ onMenuClick }) => {
             className="flex items-center gap-2 lg:gap-3 bg-[#0d0d0d] hover:bg-[#1a1a1a] px-2 lg:px-3 py-1.5 lg:py-2 rounded-full cursor-pointer transition-all shrink-0 border border-transparent hover:border-[#282828]"
           >
             <img
-              src={user.avatar}
-              alt={user.name}
+              src={getUserAvatar()}
+              alt={getUserName()}
               className="w-7 h-7 lg:w-8 lg:h-8 rounded-full ring-2 ring-[#1db954] object-cover"
             />
             <div className="hidden sm:flex items-center gap-2">
               <div className="flex flex-col">
-                <span className="text-white font-semibold text-xs lg:text-sm max-w-[120px] truncate leading-tight">{user.name}</span>
-                <span className="text-[#b3b3b3] text-[10px] lg:text-xs leading-tight">Premium</span>
+                <span className="text-white font-semibold text-xs lg:text-sm max-w-[120px] truncate leading-tight">{getUserName()}</span>
+                <span className="text-[#b3b3b3] text-[10px] lg:text-xs leading-tight">{user?.role === 'artist' ? 'Artist' : 'Premium'}</span>
               </div>
               <FaChevronDown className="text-[#b3b3b3] text-xs" />
             </div>

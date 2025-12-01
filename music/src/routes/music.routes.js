@@ -20,4 +20,5 @@ router.get('/playlist',authMiddlware.authUserMiddleware,musicController.getPlayl
 router.get('/playlist/:id',authMiddlware.authUserMiddleware,musicController.getPlaylistById);
 router.post('/createUserPlaylist',authMiddlware.authUserMiddleware,musicController.createUserPlaylist);
 router.get('/userPlaylists',authMiddlware.authUserMiddleware,musicController.getUserPlaylists);
+router.get('/playlist/user/:id',authMiddlware.authUserMiddleware,musicController.getSpecificUserPlaylists);
 module.exports = router;

@@ -1,12 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { FaMusic, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
-import axios from 'axios';
+import { FaMusic, FaUser, FaEnvelope, FaLock, FaEye, FaEyeSlash, FaGoogle } from 'react-icons/fa';
+import { useDispatch, useSelector } from 'react-redux';
+import { registerUser, googleAuth, clearError } from '../Store/actions/userAction';
 
 const Signup = () => {
   const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { isAuthenticated, loading, error } = useSelector((state) => state.user);
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
 
   const [formData, setFormData] = useState({
     firstName: '',
@@ -14,6 +16,20 @@ const Signup = () => {
     email: '',
     password: ''
   });
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (isAuthenticated) {
+      navigate('/');
+    }
+  }, [isAuthenticated, navigate]);
+
+  // Clear error on unmount
+  useEffect(() => {
+    return () => {
+      dispatch(clearError());
+    };
+  }, [dispatch]);
 
   const handleChange = (e) => {
     setFormData({
@@ -25,37 +41,17 @@ const Signup = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    try {
-      setLoading(true);
+    const result = await dispatch(registerUser(formData));
 
-      const payload = {
-        email: formData.email,
-        password: formData.password,
-        role: "user",
-        fullName: {
-          firstName: formData.firstName,
-          lastName: formData.lastName
-        }
-      };
-
-      const response = await axios.post(
-        `http://localhost:3000/api/auth/register`,
-        payload,
-        {
-          withCredentials: true,
-          headers: { "Content-Type": "application/json" }
-        }
-      );
-
-      alert("Account created successfully!");
-      navigate("/login");
-
-    } catch (error) {
-      console.log(error);
-      alert(error.response?.data?.message || "Signup failed");
-    } finally {
-      setLoading(false);
+    if (result.success) {
+      navigate('/');
+    } else {
+      alert(result.message || 'Signup failed');
     }
+  };
+
+  const handleGoogleAuth = () => {
+    googleAuth();
   };
 
   return (
@@ -165,6 +161,13 @@ const Signup = () => {
               </p>
             </div>
 
+            {/* Error Message */}
+            {error && (
+              <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-3 text-red-400 text-sm text-center">
+                {error}
+              </div>
+            )}
+
             {/* Submit */}
             <button
               type="submit"
@@ -181,6 +184,15 @@ const Signup = () => {
             <span className="text-[#b3b3b3] text-sm">OR</span>
             <div className="flex-1 border-t border-[#282828]"></div>
           </div>
+
+          {/* Google Sign Up */}
+          <button
+            onClick={handleGoogleAuth}
+            className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-semibold py-3.5 rounded-full transition-all hover:scale-105 shadow-lg text-base mb-4"
+          >
+            <FaGoogle className="text-xl" />
+            Continue with Google
+          </button>
 
           {/* Login */}
           <p className="text-center text-[#b3b3b3] text-sm">

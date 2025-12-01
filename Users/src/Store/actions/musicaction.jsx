@@ -3,11 +3,13 @@ import { setCurrentMusic, setAllMusic, setArtistPlaylist } from "../slices/music
 
 export const fetchMusicData = () => async (dispatch) => {
     try {
+        console.log("fetchMusicData: Starting API call...");
         const response = await axios.get('http://localhost:3001/api/music',{
         withCredentials: true,
       });
-    //   console.log(response.data.musics)
+      console.log("fetchMusicData: Response received:", response.data);
         const musicData = response.data.musics || [];
+        console.log("fetchMusicData: Music data to dispatch:", musicData);
         dispatch(setAllMusic(musicData));
 
     }catch (error) {
