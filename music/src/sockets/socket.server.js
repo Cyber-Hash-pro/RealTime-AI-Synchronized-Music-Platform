@@ -23,7 +23,7 @@ function initSocketServer(httpServer) {
         if (!decode) {
             return next(new Error("Authentication error: Invalid token"));
         }
-        console.log("Decoded token:", decode);
+        // console.log("Decoded token:", decode);
         socket.user = decode; // Attach user info to socket object // req.user= decode noramal api socket api socket.user = decode this 
         next();
     }catch(err){
@@ -32,6 +32,7 @@ function initSocketServer(httpServer) {
 });
 
 io.on("connection", (socket) => {
+    console.log(`User connected: ${socket.user.email}`);
     socket.join(socket.user.id) // room ki id is user ki id 
     // scoket.jon kya karta hae method user ko connect  or join karvata hae room se 
     // agar room nahi hova to too create kar dega 
@@ -43,14 +44,14 @@ io.on("connection", (socket) => {
     isOnline,
   });
 });
-
-
-
     socket.on('play',(data)=>{
+        console.log('Play event received on server with data:', data);
         const musicId= data.musicId 
         // broadcast means sabko send kar dega except sender ko 
         // broadcast.to kya karta hae specific room me send kar dega user ko 
           socket.broadcast.to(socket.user.id).emit('play', {musicId}) // ye sirf usi user ko send karega jiska id hae
+        //   broadcast → send to others only (not the sender)
+       // .to(socket.user.id) → send only to that room (that user)
     })
   
 

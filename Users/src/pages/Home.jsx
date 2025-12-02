@@ -1,14 +1,33 @@
-import { useEffect } from 'react';
+import { useEffect ,useState} from 'react';
 import SongCard from '../components/SongCard';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchMusicData } from '../Store/actions/musicaction.jsx';
+import { useNavigate } from 'react-router-dom';
+import socketInstance from '../socket.service.js';
 
 const Home = () => {
+
   const dispatch = useDispatch();
   const { allMusic, loading, error } = useSelector((state) => state.music);
-
+  const navigate = useNavigate();
+  
   useEffect(() => {
     dispatch(fetchMusicData());
+    socketInstance.on('connect', () => {
+        console.log('Connected to socket server');
+    });
+    socketInstance.on('play', (data) => {
+      console.log('Play event received with data:', data);
+      const musicId = data.musicId; 
+    
+      navigate(`/song/${musicId}`
+        
+      );
+    });
+   
+    return () => {
+    };
+
   }, [dispatch]);
 
   if (loading) {

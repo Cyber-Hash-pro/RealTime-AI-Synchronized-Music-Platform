@@ -1,10 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { useMusicPlayer } from '../contexts/MusicContext';
 import { useDispatch, useSelector } from 'react-redux';
 import { fetchMusicData, specificMusicData } from '../Store/actions/musicaction.jsx';
-import socketService from '../services/socket.service';
 import {
   SongHeader,
   SongControls,
@@ -13,6 +12,7 @@ import {
   LoadingState,
   ErrorState
 } from '../components/SongDetails';
+import socketInstance from '../socket.service.js';
 
 
 const SongDetails = () => {
@@ -22,7 +22,6 @@ const SongDetails = () => {
   
   // Redux state
   const { currentMusic: songData, allMusic } = useSelector((state) => state.music);
-  console.log('fetch songs data ',songData)
 
   const {
     currentSong,
@@ -36,8 +35,10 @@ const SongDetails = () => {
   const [isLiked, setIsLiked] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  // np103177
-  const [isSocketConnected, setIsSocketConnected] = useState(false);
+  
+  // Refs to prevent multiple calls
+  const hasPlayedRef = useRef(false);
+  const lastPlayedIdRef = useRef(null);
 
   // Filter all songs to get recommendations (excluding current song)
   const allSongs = allMusic ? allMusic.filter(song => song._id !== id).slice(0, 6) : [];
@@ -45,35 +46,8 @@ const SongDetails = () => {
   // Check if this song is currently playing
   const isCurrentSong = currentSong && currentSong._id === songData?._id;
 
-  // Initialize socket connection
-  useEffect(() => {
-    const socket = socketService.connect();
-    
-    socket.on('connect', () => {
-      setIsSocketConnected(true);
-    });
-
-    socket.on('disconnect', () => {
-      setIsSocketConnected(false);
-    });
-
-    // Listen for play events from other devices
-    socketService.onPlay(async (data) => {
-      console.log('Received play from another device:', data.musicId);
-      // Fetch and play the song that was played on another device
-      if (data.musicId && data.musicId !== songData?._id) {
-        await dispatch(specificMusicData(data.musicId));
-        navigate(`/song/${data.musicId}`);
-      }
-    });
-
-    return () => {
-      socketService.offPlay();
-    };
-  }, [dispatch, navigate, songData?._id]);
-// np103177
   // Fetch song data using Redux
-  const fetchSong = async () => {
+  const fetchSong = useCallback(async () => {
     try {
       setLoading(true);
       await dispatch(specificMusicData(id));
@@ -84,51 +58,64 @@ const SongDetails = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dispatch, id]);
 
   // Fetch all songs for recommendations using Redux
-  const fetchAllSongs = async () => {
+  const fetchAllSongs = useCallback(async () => {
     try {
       await dispatch(fetchMusicData());
     } catch (error) {
       console.error('Error fetching songs:', error);
     }
-  };
+  }, [dispatch]);
 
-  // Fetch song on component mount
+  // Fetch song on component mount or when id changes
   useEffect(() => {
+    // Reset played state when song id changes
+    hasPlayedRef.current = false;
+    lastPlayedIdRef.current = null;
+    
     fetchSong();
     fetchAllSongs();
+    
+    // Proper cleanup - just reset refs, don't fetch again
     return () => {
-      fetchSong();
-      fetchAllSongs();
-    }
-  }, [id]);
+      hasPlayedRef.current = false;
+    };
+  }, [id, fetchSong, fetchAllSongs]);
 
-  // Auto-play when song data loads and emit to socket
+  // Auto-play when song data loads - only once per song
   useEffect(() => {
-    if (songData && allSongs.length > 0) {
-      const fullPlaylist = [songData, ...allSongs];
-      playSong(songData, fullPlaylist);// np103177
+    // Only play if we haven't played this song yet and song data is ready
+    if (
+      songData && 
+      songData._id && 
+      songData._id === id &&  // Make sure it's the correct song for current route
+      songData._id !== lastPlayedIdRef.current &&
+      !hasPlayedRef.current &&
+      !loading
+    ) {
+      hasPlayedRef.current = true;
+      lastPlayedIdRef.current = songData._id;
       
-      // Emit play event to sync with other devices
-      socketService.emitPlay(songData._id);
-    }// np103177
-  }, [songData?._id, allSongs.length]);
-
+      // Create playlist with current song and recommendations if available
+      const fullPlaylist = allSongs.length > 0 ? [songData, ...allSongs] : [songData];
+      playSong(songData, fullPlaylist);
+      socketInstance.emit('play', { musicId: songData._id });
+    }
+  }, [songData, id, allSongs, playSong, loading]);
+  
   // Event handlers
-  const handlePlayPause = () => {
+  const handlePlayPause = useCallback(() => {
     if (isCurrentSong) {
       togglePlayPause();
-    } else {
-      playSong(songData);// np103177
-      // Emit play event when user manually plays
-      socketService.emitPlay(songData._id);
+    } else if (songData) {
+      playSong(songData);
     }
-  };// np103177
+  }, [isCurrentSong, togglePlayPause, songData, playSong]);
 
-  const handleLike = () => setIsLiked(!isLiked);
-  const handleGoBack = () => navigate(-1);
+  const handleLike = useCallback(() => setIsLiked(prev => !prev), []);
+  const handleGoBack = useCallback(() => navigate(-1), [navigate]);
 
   // Loading state
   if (loading) return <LoadingState />;

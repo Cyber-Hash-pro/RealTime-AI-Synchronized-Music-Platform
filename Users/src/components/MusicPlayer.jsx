@@ -1,5 +1,5 @@
 import { FaPlay, FaPause, FaStepForward, FaStepBackward, FaRandom, FaRedo, FaVolumeUp, FaHeart } from 'react-icons/fa';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useMusicPlayer } from '../contexts/MusicContext';
 
 const MusicPlayer = () => {
@@ -25,41 +25,27 @@ const MusicPlayer = () => {
       volume: { '--range-progress': `${volumePercent}%` }
     };
   }, [currentTime, duration, volume]);
-const nextplay=()=>{
-  // Logic to play the next song
-  alert("next song")
-  
-} 
-  // Sync audio element with playing state
-  useEffect(() => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.play().catch(console.error);
-      } else {
-        audioRef.current.pause();
-      }
-    }
-  }, [isPlaying, audioRef]);
 
-  const handleSeek = (event) => {
-        audioRef.current.pause();
-    
+  const nextplay = useCallback(() => {
+    // Logic to play the next song
+    alert("next song")
+  }, []);
+
+  const handleSeek = useCallback((event) => {
     const newProgress = Number(event.target.value);
     const newTime = (newProgress / 100) * duration;
-    
     seekTo(newTime);
-  };
+  }, [duration, seekTo]);
 
-  const handleVolumeChange = (event) => {
+  const handleVolumeChange = useCallback((event) => {
     const newVolume = Number(event.target.value) / 100;
     setVolumeLevel(newVolume);
-  };
+  }, [setVolumeLevel]);
 
   // Don't render if no song is playing
   if (!currentSong) {
     return null;
   }
-  console.log('Current Song in Player:', currentSong);
 
   return (
     <div className="fixed bottom-0 left-0 lg:left-[250px] right-0 bg-[#181818] border-t border-[#282828] px-2 lg:px-4 py-2 lg:py-3 z-50">
