@@ -17,14 +17,14 @@ const PlayerControls = ({
   isMuted,
   isShuffled,
   repeatMode,
-  onTogglePlayPause,
+  onPlayPause,
   onSeek,
-  onPlayNext,
-  onPlayPrevious,
+  onNext,
+  onPrevious,
   onVolumeChange,
-  onToggleMute,
-  onToggleShuffle,
-  onToggleRepeat,
+  onMuteToggle,
+  onShuffleToggle,
+  onRepeatToggle,
   formatTime
 }) => {
   return (
@@ -48,7 +48,7 @@ const PlayerControls = ({
       {/* Main Controls */}
       <div className="flex items-center justify-center gap-6">
         <button 
-          onClick={onToggleShuffle}
+          onClick={onShuffleToggle}
           className={`text-xl transition-colors ${isShuffled ? 'text-[#1db954]' : 'text-[#b3b3b3] hover:text-white'}`}
           title="Shuffle"
         >
@@ -56,14 +56,14 @@ const PlayerControls = ({
         </button>
         
         <button 
-          onClick={onPlayPrevious}
+          onClick={onPrevious}
           className="text-2xl text-white hover:text-[#1db954] transition-colors"
         >
           <FaStepBackward />
         </button>
         
         <button 
-          onClick={onTogglePlayPause}
+          onClick={onPlayPause}
           className="w-14 h-14 bg-[#1db954] rounded-full flex items-center justify-center hover:scale-105 transition-transform"
         >
           {isPlaying ? (
@@ -74,14 +74,14 @@ const PlayerControls = ({
         </button>
         
         <button 
-          onClick={onPlayNext}
+          onClick={onNext}
           className="text-2xl text-white hover:text-[#1db954] transition-colors"
         >
           <FaStepForward />
         </button>
         
         <button 
-          onClick={onToggleRepeat}
+          onClick={onRepeatToggle}
           className={`text-xl transition-colors relative ${repeatMode !== 'off' ? 'text-[#1db954]' : 'text-[#b3b3b3] hover:text-white'}`}
           title={`Repeat: ${repeatMode}`}
         >
@@ -94,7 +94,7 @@ const PlayerControls = ({
 
       {/* Volume Control */}
       <div className="flex items-center justify-center gap-3 mt-6">
-        <button onClick={onToggleMute} className="text-[#b3b3b3] hover:text-white">
+        <button onClick={onMuteToggle} className="text-[#b3b3b3] hover:text-white">
           {isMuted || volume === 0 ? <FaVolumeMute /> : <FaVolumeUp />}
         </button>
         <input

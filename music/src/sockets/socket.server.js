@@ -8,7 +8,7 @@ const room = new Map();
 function initSocketServer(httpServer) {
     const io = new Server(httpServer, {
         cors: {
-            origin: "http://localhost:5173",
+            origin: ["http://localhost:5173", "http://localhost:5174"],
           credentials: true,
           
         }
@@ -87,6 +87,7 @@ io.on("connection", (socket) => {
     })
     socket.on('send-audio',({roomId, 
   src, 
+  senderDetails,
   thumbnail, 
   currentTime, 
   volume })=>{
@@ -94,6 +95,7 @@ io.on("connection", (socket) => {
 
         socket.broadcast.to(roomId).emit('receive-audio', {
              src,
+             senderDetails,
     thumbnail,
     currentTime,
     volume

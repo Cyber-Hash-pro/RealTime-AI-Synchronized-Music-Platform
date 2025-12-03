@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   FaArrowLeft, 
@@ -10,30 +10,22 @@ import {
   FaEyeSlash, 
   FaSignOutAlt,
   FaVolumeUp,
-  FaCrown
+  FaCrown,
+  FaPlay,
+  FaPause
 } from 'react-icons/fa';
 import { useMusicPlayer } from '../contexts/MusicContext';
-import axios from 'axios';
+import socketInstance from '../socket.service.js';
 
 const JoinFriends = () => {
   const navigate = useNavigate();
   const { playSong, currentSong, isPlaying, togglePlayPause } = useMusicPlayer();
+  const audioRef = useRef(null);
   
-  const [friends, setFriends] = useState([]);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('sessions'); // 'sessions' or 'friends'
   const [joinCode, setJoinCode] = useState('');
-  const [joinPassword, setJoinPassword] = useState('');
-  const [error, setError] = useState(null);
-  
-  // Create Room States
-  const [showCreateRoom, setShowCreateRoom] = useState(false);
-  const [roomName, setRoomName] = useState('');
-  const [roomPassword, setRoomPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isPrivate, setIsPrivate] = useState(false);
-  const [isCreating, setIsCreating] = useState(false);
 
   // Password Modal & Listener View States
   const [showPasswordModal, setShowPasswordModal] = useState(false);
@@ -43,75 +35,28 @@ const JoinFriends = () => {
   const [sessionData, setSessionData] = useState(null);
   const [volumeLevel, setVolumeLevel] = useState(75);
   const [isVerifying, setIsVerifying] = useState(false);
-
-  // Dummy session data for listener view
-  const dummySessionData = {
-    hostName: 'DJ CyberMaster',
-    hostAvatar: 'https://i.pravatar.cc/150?img=68',
-    songTitle: 'Midnight Dreams',
-    artist: 'Neon Pulse',
-    albumArt: 'https://picsum.photos/400/400?random=1',
-    duration: '3:45',
-    currentTime: '1:23',
-    listeners: 127,
-    isLive: true,
-    genre: 'Electronic',
-    bpm: 128,
-    mood: 'Energetic'
-  };
+  const [currentRoomId, setCurrentRoomId] = useState('');
+  
+  // Audio playback states for listener
+  const [listenerAudio, setListenerAudio] = useState({
+    src: '',
+    thumbnail: '',
+    title: 'Waiting for host...',
+    artist: '',
+    currentTime: 0,
+    volume: 0.7,
+    isPlaying: false,
+    senderDetails: null
+  });
 
   useEffect(() => {
-    fetchFriendsAndSessions();
+    // Load dummy sessions data
+    setSessions([
+      { _id: '1', hostName: 'Rahul Sharma', hostAvatar: 'https://i.pravatar.cc/150?img=1', songTitle: 'Blinding Lights', artist: 'The Weeknd', listeners: 5, code: 'ABC12345' },
+      { _id: '2', hostName: 'Priya Patel', hostAvatar: 'https://i.pravatar.cc/150?img=5', songTitle: 'Levitating', artist: 'Dua Lipa', listeners: 3, code: 'XYZ78901' },
+    ]);
+    setLoading(false);
   }, []);
-
-  const fetchFriendsAndSessions = async () => {
-    try {
-      setLoading(true);
-      // Fetch friends list
-      const friendsRes = await axios.get('http://localhost:3001/api/music/friends', {
-        withCredentials: true,
-      });
-      setFriends(friendsRes.data.friends || []);
-
-      // Fetch active listening sessions
-      const sessionsRes = await axios.get('http://localhost:3001/api/music/sessions', {
-        withCredentials: true,
-      });
-      setSessions(sessionsRes.data.sessions || []);
-    } catch (err) {
-      console.error("Error fetching data:", err);
-      // Use dummy data for now
-      setFriends([
-        { _id: '1', name: 'Rahul Sharma', avatar: 'https://i.pravatar.cc/150?img=1', isOnline: true, currentlyPlaying: 'Blinding Lights' },
-        { _id: '2', name: 'Priya Patel', avatar: 'https://i.pravatar.cc/150?img=5', isOnline: true, currentlyPlaying: 'Levitating' },
-        { _id: '3', name: 'Amit Kumar', avatar: 'https://i.pravatar.cc/150?img=3', isOnline: false, currentlyPlaying: null },
-        { _id: '4', name: 'Sneha Singh', avatar: 'https://i.pravatar.cc/150?img=9', isOnline: true, currentlyPlaying: 'Shape of You' },
-      ]);
-      setSessions([
-        { _id: '1', hostName: 'Rahul Sharma', hostAvatar: 'https://i.pravatar.cc/150?img=1', songTitle: 'Blinding Lights', artist: 'The Weeknd', listeners: 5, code: 'ABC123' },
-        { _id: '2', hostName: 'Priya Patel', hostAvatar: 'https://i.pravatar.cc/150?img=5', songTitle: 'Levitating', artist: 'Dua Lipa', listeners: 3, code: 'XYZ789' },
-      ]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleJoinSession = async (sessionCode) => {
-    try {
-      const response = await axios.post('http://localhost:3001/api/music/sessions/join', {
-        code: sessionCode
-      }, {
-        withCredentials: true,
-      });
-      console.log("Joined session:", response.data);
-      // Navigate to the control room
-      navigate(`/control-room/${sessionCode}`);
-    } catch (err) {
-      console.error("Error joining session:", err);
-      // Even if API fails, navigate to control room for demo
-      navigate(`/control-room/${sessionCode}`);
-    }
-  };
 
   const handleJoinWithCode = () => {
     if (joinCode.trim()) {
@@ -129,87 +74,103 @@ const JoinFriends = () => {
     }
     
     setIsVerifying(true);
-    // Simulate password verification
-    setTimeout(() => {
-      // Dummy password check - accept "1234" or "password"
-      if (enteredPassword === '1234' || enteredPassword === 'password' || enteredPassword.length >= 4) {
-        setShowPasswordModal(false);
-        setIsJoined(true);
-        setSessionData(dummySessionData);
-        setPasswordError('');
-      } else {
-        setPasswordError('Incorrect password. Try again.');
-      }
-      setIsVerifying(false);
-    }, 1500);
+    setPasswordError('');
+    
+    // Emit joinroom event to socket
+    socketInstance.emit('joinroom', {
+      roomId: joinCode,
+      password: enteredPassword
+    });
   };
+
+  // Listen for socket room events
+  useEffect(() => {
+    socketInstance.on('roomJoined', (roomId) => {
+      console.log("Successfully joined room:", roomId);
+      setShowPasswordModal(false);
+      setIsJoined(true);
+      setCurrentRoomId(roomId);
+      setSessionData({
+        hostName: 'Host',
+        hostAvatar: 'https://i.pravatar.cc/150?img=68',
+        songTitle: 'Waiting for host to play...',
+        artist: '',
+        albumArt: 'https://placehold.co/400x400/1db954/ffffff?text=🎵',
+        listeners: 1,
+        isLive: true
+      });
+      setPasswordError('');
+      setIsVerifying(false);
+    });
+
+    socketInstance.on('roomError', (data) => {
+      console.log("Room error:", data);
+      setPasswordError(data.message);
+      setIsVerifying(false);
+    });
+
+    // Listen for audio from host
+    socketInstance.on('receive-audio', (data) => {
+      console.log("Received audio from host:", data);
+      setListenerAudio({
+        src: data.src,
+        thumbnail: data.thumbnail,
+        title: 'Now Playing',
+        artist: data.senderDetails?.name || 'Host',
+        currentTime: data.currentTime || 0,
+        volume: data.volume || 0.7,
+        isPlaying: true,
+        senderDetails: data.senderDetails
+      });
+      
+      // Update session data with new song info
+      setSessionData(prev => ({
+        ...prev,
+        hostName: data.senderDetails?.name || 'Host',
+        albumArt: data.thumbnail || prev?.albumArt,
+        songTitle: 'Live Audio',
+        artist: data.senderDetails?.name || 'Host'
+      }));
+
+      // Play the audio
+      if (audioRef.current) {
+        audioRef.current.src = data.src;
+        audioRef.current.currentTime = data.currentTime || 0;
+        audioRef.current.volume = data.volume || 0.7;
+        audioRef.current.play().catch(err => console.log('Autoplay blocked:', err));
+      }
+    });
+
+    return () => {
+      socketInstance.off('roomJoined');
+      socketInstance.off('roomError');
+      socketInstance.off('receive-audio');
+    };
+  }, []);
 
   const handleExitSession = () => {
     setIsJoined(false);
     setSessionData(null);
     setJoinCode('');
     setEnteredPassword('');
-  };
-
-  const handleCreateSession = async () => {
-    if (!roomName.trim()) {
-      setError("Please enter a room name");
-      return;
-    }
-    if (isPrivate && !roomPassword.trim()) {
-      setError("Please enter a password for private room");
-      return;
-    }
-    
-    try {
-      setIsCreating(true);
-      // Generate a room code
-      const roomCode = generateRoomCode();
-      
-      // Try API call, but navigate even if it fails (for demo)
-      try {
-        const response = await axios.post('http://localhost:3001/api/music/sessions/create', {
-          roomName: roomName.trim(),
-          password: isPrivate ? roomPassword : null,
-          isPrivate: isPrivate,
-          code: roomCode
-        }, {
-          withCredentials: true,
-        });
-        console.log("Created session:", response.data);
-        navigate(`/control-room/${response.data.code || roomCode}`);
-      } catch (apiErr) {
-        // Even if API fails, navigate to control room for demo
-        console.log("API not available, navigating to control room with code:", roomCode);
-        navigate(`/control-room/${roomCode}`);
-      }
-    } catch (err) {
-      console.error("Error creating session:", err);
-      setError("Failed to create session");
-    } finally {
-      setIsCreating(false);
+    setCurrentRoomId('');
+    setListenerAudio({
+      src: '',
+      thumbnail: '',
+      title: 'Waiting for host...',
+      artist: '',
+      currentTime: 0,
+      volume: 0.7,
+      isPlaying: false,
+      senderDetails: null
+    });
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.src = '';
     }
   };
 
-  const generateRoomCode = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    let code = '';
-    for (let i = 0; i < 6; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return code;
-  };
 
-  const handleAddFriend = async (friendId) => {
-    try {
-      await axios.post(`http://localhost:3001/api/music/friends/add/${friendId}`, {}, {
-        withCredentials: true,
-      });
-      fetchFriendsAndSessions();
-    } catch (err) {
-      console.error("Error adding friend:", err);
-    }
-  };
 
   if (loading) {
     return (
@@ -300,6 +261,9 @@ const JoinFriends = () => {
       {/* LISTENER VIEW - Clean & Simple */}
       {isJoined && sessionData ? (
         <div className="min-h-screen flex flex-col">
+          {/* Hidden Audio Element for Listener */}
+          <audio ref={audioRef} preload="metadata" />
+          
           {/* Top Bar */}
           <div className="flex items-center justify-between p-4 border-b border-[#282828]">
             <div className="flex items-center gap-2">
@@ -310,6 +274,9 @@ const JoinFriends = () => {
               <span className="text-[#b3b3b3] text-sm flex items-center gap-1">
                 <FaUsers size={12} />
                 {sessionData.listeners}
+              </span>
+              <span className="text-[#1db954] text-xs font-mono ml-2">
+                Room: {currentRoomId}
               </span>
             </div>
             
@@ -331,57 +298,89 @@ const JoinFriends = () => {
                 alt={sessionData.hostName}
                 className="w-8 h-8 rounded-full"
               />
-              <span className="text-[#b3b3b3] text-sm">{sessionData.hostName}</span>
+              <span className="text-[#b3b3b3] text-sm">{listenerAudio.senderDetails?.name || sessionData.hostName}</span>
               <FaCrown className="text-yellow-400 text-xs" />
             </div>
 
             {/* Album Art */}
             <div className="relative mb-6">
               <img 
-                src={sessionData.albumArt} 
+                src={listenerAudio.thumbnail || sessionData.albumArt} 
                 alt={sessionData.songTitle}
                 className="w-64 h-64 sm:w-72 sm:h-72 rounded-2xl object-cover shadow-xl"
+                onError={(e) => {
+                  e.target.src = 'https://placehold.co/400x400/1db954/ffffff?text=🎵';
+                }}
               />
-              {/* Simple Playing Indicator */}
-              <div className="absolute bottom-3 right-3 flex items-end gap-0.5 h-4 bg-black/60 px-2 py-1 rounded">
-                <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '40%', animationDelay: '0ms'}}></div>
-                <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '80%', animationDelay: '150ms'}}></div>
-                <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '60%', animationDelay: '300ms'}}></div>
-                <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '100%', animationDelay: '450ms'}}></div>
-              </div>
+              {/* Playing Indicator */}
+              {listenerAudio.isPlaying && (
+                <div className="absolute bottom-3 right-3 flex items-end gap-0.5 h-4 bg-black/60 px-2 py-1 rounded">
+                  <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '40%', animationDelay: '0ms'}}></div>
+                  <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '80%', animationDelay: '150ms'}}></div>
+                  <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '60%', animationDelay: '300ms'}}></div>
+                  <div className="w-1 bg-[#1db954] rounded-full animate-bounce" style={{height: '100%', animationDelay: '450ms'}}></div>
+                </div>
+              )}
+              {!listenerAudio.isPlaying && (
+                <div className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-2xl">
+                  <div className="text-white text-center">
+                    <FaHeadphones className="text-4xl mx-auto mb-2 text-[#1db954]" />
+                    <p className="text-sm">Waiting for host...</p>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Song Info */}
             <div className="text-center mb-8">
               <h1 className="text-2xl sm:text-3xl font-bold text-white mb-1">
-                {sessionData.songTitle}
+                {listenerAudio.isPlaying ? 'Now Playing' : sessionData.songTitle}
               </h1>
-              <p className="text-[#b3b3b3]">{sessionData.artist}</p>
+              <p className="text-[#b3b3b3]">{listenerAudio.senderDetails?.name || sessionData.artist}</p>
+              {listenerAudio.isPlaying && (
+                <p className="text-[#1db954] text-sm mt-2">🎧 Listening to host's music</p>
+              )}
             </div>
 
-            {/* Volume Display (Read Only) */}
+            {/* Volume Control */}
             <div className="w-full max-w-xs bg-[#181818] rounded-xl p-4 border border-[#282828]">
               <div className="flex items-center justify-between mb-3">
                 <div className="flex items-center gap-2">
                   <FaVolumeUp className="text-[#1db954]" />
                   <span className="text-white text-sm">Volume</span>
                 </div>
-                <span className="text-[#1db954] font-bold">{volumeLevel}%</span>
+                <span className="text-[#1db954] font-bold">{Math.round(listenerAudio.volume * 100)}%</span>
               </div>
               
-              <div className="h-2 bg-[#282828] rounded-full overflow-hidden">
-                <div 
-                  className="h-full bg-[#1db954] rounded-full transition-all duration-300"
-                  style={{width: `${volumeLevel}%`}}
-                ></div>
-              </div>
-              <p className="text-[#535353] text-xs mt-2 text-center">Controlled by host</p>
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={listenerAudio.volume * 100}
+                onChange={(e) => {
+                  const newVol = Number(e.target.value) / 100;
+                  setListenerAudio(prev => ({ ...prev, volume: newVol }));
+                  if (audioRef.current) {
+                    audioRef.current.volume = newVol;
+                  }
+                }}
+                className="w-full h-2 bg-[#282828] rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, #1db954 ${listenerAudio.volume * 100}%, #282828 ${listenerAudio.volume * 100}%)`
+                }}
+              />
+              <p className="text-[#535353] text-xs mt-2 text-center">
+                {listenerAudio.isPlaying ? '🔊 Audio synced with host' : '⏳ Waiting for audio...'}
+              </p>
             </div>
           </div>
 
           {/* Bottom Progress */}
           <div className="h-1 bg-[#282828]">
-            <div className="h-full bg-[#1db954] transition-all" style={{width: '35%'}}></div>
+            <div 
+              className="h-full bg-[#1db954] transition-all" 
+              style={{width: listenerAudio.isPlaying ? '100%' : '0%'}}
+            ></div>
           </div>
         </div>
       ) : (
@@ -420,13 +419,13 @@ const JoinFriends = () => {
                   type="text"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="Enter 6-digit code"
-                  maxLength={6}
+                  placeholder="Enter 8-digit code"
+                  maxLength={8}
                   className="flex-1 bg-[#282828] text-white px-4 py-3 rounded-lg border border-[#404040] focus:border-[#1db954] focus:outline-none uppercase tracking-widest text-center font-mono"
                 />
                 <button
                   onClick={handleJoinWithCode}
-                  disabled={joinCode.length < 6}
+                  disabled={joinCode.length < 8}
                   className="bg-[#1db954] text-black px-6 py-3 rounded-full font-semibold hover:bg-[#1ed760] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Join
@@ -475,6 +474,9 @@ const JoinFriends = () => {
           </div>
         </>
       )}
+
+      {/* Hidden audio element for listener playback */}
+      <audio ref={audioRef} hidden />
     </div>
   );
 };

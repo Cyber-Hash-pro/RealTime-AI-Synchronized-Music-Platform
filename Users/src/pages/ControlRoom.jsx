@@ -30,6 +30,9 @@ const ControlRoom = () => {
   const [sessionCreated, setSessionCreated] = useState(false);
   const [cooldownTime, setCooldownTime] = useState(0); // Cooldown in seconds
   const cooldownRef = useRef(null);
+  const [roomError, setRoomError] = useState('');
+  const [roomSuccess, setRoomSuccess] = useState('');
+  const [connectedListeners, setConnectedListeners] = useState(0);
   
   // Check User Online States
   const [checkEmail, setCheckEmail] = useState('');
@@ -159,6 +162,16 @@ const ControlRoom = () => {
     const sessionId = uuidv4().split('-')[0].toUpperCase(); // Short UUID (first 8 chars)
     const sessionPassword = generatePassword();
     
+    setRoomError('');
+    setRoomSuccess('');
+    
+    // Emit to socket to create room on server
+    socketInstance.emit('createroom', { 
+      roomId: sessionId, 
+      password: sessionPassword
+    });
+
+    // Store locally (will be confirmed by socket response)
     setRoomData(prev => ({
       ...prev,
       code: sessionId,
@@ -167,35 +180,65 @@ const ControlRoom = () => {
       createdAt: new Date().toISOString(),
     }));
     
-    setSessionCreated(true);
-    console.log("Session Created:", { id: sessionId, password: sessionPassword });
-    
-    // Emit to socket to create room on server
-    socketInstance.emit('create-session', { 
-      sessionId, 
-      password: sessionPassword,
-      hostEmail: user?.email 
+    console.log("Creating Session:", { id: sessionId, password: sessionPassword });
+  };
+
+  // Listen for room creation response
+  useEffect(() => {
+    socketInstance.on('roomCreated', (roomId) => {
+      console.log("Room created successfully:", roomId);
+      setSessionCreated(true);
+      setRoomSuccess('Session created successfully!');
+      setRoomError('');
+      
+      // Start 30 minute cooldown (1800 seconds)
+      setCooldownTime(30 * 60);
+      
+      // Clear any existing interval
+      if (cooldownRef.current) {
+        clearInterval(cooldownRef.current);
+      }
+      
+      // Start countdown timer
+      cooldownRef.current = setInterval(() => {
+        setCooldownTime(prev => {
+          if (prev <= 1) {
+            clearInterval(cooldownRef.current);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
     });
 
-    // Start 30 minute cooldown (1800 seconds)
-    setCooldownTime(30 * 60);
-    
-    // Clear any existing interval
-    if (cooldownRef.current) {
-      clearInterval(cooldownRef.current);
-    }
-    
-    // Start countdown timer
-    cooldownRef.current = setInterval(() => {
-      setCooldownTime(prev => {
-        if (prev <= 1) {
-          clearInterval(cooldownRef.current);
-          return 0;
-        }
-        return prev - 1;
+    socketInstance.on('roomError', (data) => {
+      console.log("Room error:", data);
+      setRoomError(data.message);
+      setRoomSuccess('');
+    });
+
+    return () => {
+      socketInstance.off('roomCreated');
+      socketInstance.off('roomError');
+    };
+  }, []);
+
+  // Broadcast audio to room when song changes or plays
+  useEffect(() => {
+    if (currentSong && sessionCreated && roomData?.code) {
+      socketInstance.emit('send-audio', {
+        roomId: roomData.code,
+        src: currentSong.musicUrl,
+        senderDetails: {
+          name: user?.fullName ? `${user.fullName.firstName} ${user.fullName.lastName}` : 'Host',
+          email: user?.email
+        },
+        thumbnail: currentSong.coverUrl || currentSong.cover,
+        currentTime: currentTime,
+        volume: volume
       });
-    }, 1000);
-  };
+    }
+  }, [currentSong, isPlaying, sessionCreated]);
 
   // Cleanup interval on unmount
   useEffect(() => {
@@ -426,6 +469,18 @@ const ControlRoom = () => {
               🎵 Session Controls
             </h2>
             
+            {/* Error/Success Messages */}
+            {roomError && (
+              <div className="mb-4 p-3 bg-red-500/20 border border-red-500/50 rounded-lg">
+                <p className="text-red-400 text-sm text-center">❌ {roomError}</p>
+              </div>
+            )}
+            {roomSuccess && (
+              <div className="mb-4 p-3 bg-green-500/20 border border-green-500/50 rounded-lg">
+                <p className="text-green-400 text-sm text-center">✅ {roomSuccess}</p>
+              </div>
+            )}
+            
             {!sessionCreated ? (
               <button
                 onClick={createSession}
@@ -436,9 +491,23 @@ const ControlRoom = () => {
               </button>
             ) : (
               <div className="space-y-3">
+                {/* Live Indicator */}
+                <div className="flex items-center justify-center gap-2 p-2 bg-red-500/20 rounded-lg">
+                  <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                  <span className="text-red-400 text-sm font-medium">LIVE SESSION</span>
+                </div>
+                
                 <div className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
                   <span className="text-[#b3b3b3] text-sm">Session ID:</span>
-                  <span className="text-white font-mono font-bold">{roomData?.code}</span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-mono font-bold">{roomData?.code}</span>
+                    <button
+                      onClick={copyCode}
+                      className="text-[#1db954] hover:text-[#1ed760] text-xs"
+                    >
+                      {copied ? '✓' : '📋'}
+                    </button>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
                   <span className="text-[#b3b3b3] text-sm">Password:</span>
@@ -449,7 +518,7 @@ const ControlRoom = () => {
                     onClick={() => setShowPassword(!showPassword)}
                     className="flex-1 px-4 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#383838] transition-colors text-sm"
                   >
-                    {showPassword ? 'Hide' : 'Show'} Password
+                    {showPassword ? '🙈 Hide' : '👁️ Show'}
                   </button>
                   <button
                     onClick={createSession}
@@ -460,7 +529,7 @@ const ControlRoom = () => {
                         : 'bg-[#1db954] text-black hover:bg-[#1ed760]'
                     }`}
                   >
-                    {cooldownTime > 0 ? formatCooldown(cooldownTime) : 'New Session'}
+                    {cooldownTime > 0 ? `⏱️ ${formatCooldown(cooldownTime)}` : '🔄 New Session'}
                   </button>
                 </div>
                 {cooldownTime > 0 && (
@@ -468,9 +537,11 @@ const ControlRoom = () => {
                     ⏱️ Wait {formatCooldown(cooldownTime)} before creating a new session
                   </p>
                 )}
-                <p className="text-[#b3b3b3] text-xs text-center mt-2">
-                  Share the Session ID and Password with friends to join!
-                </p>
+                <div className="mt-4 p-3 bg-[#282828] rounded-lg">
+                  <p className="text-[#b3b3b3] text-xs text-center">
+                    📤 Share the <span className="text-[#1db954] font-bold">Session ID</span> and <span className="text-[#1db954] font-bold">Password</span> with friends to join!
+                  </p>
+                </div>
               </div>
             )}
           </div>

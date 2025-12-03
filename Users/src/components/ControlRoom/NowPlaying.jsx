@@ -10,14 +10,14 @@ const NowPlaying = ({
   isMuted,
   isShuffled,
   repeatMode,
-  onTogglePlayPause,
+  onPlayPause,
   onSeek,
-  onPlayNext,
-  onPlayPrevious,
+  onNext,
+  onPrevious,
   onVolumeChange,
-  onToggleMute,
-  onToggleShuffle,
-  onToggleRepeat,
+  onMuteToggle,
+  onShuffleToggle,
+  onRepeatToggle,
   formatTime
 }) => {
   return (
@@ -54,14 +54,14 @@ const NowPlaying = ({
             isMuted={isMuted}
             isShuffled={isShuffled}
             repeatMode={repeatMode}
-            onTogglePlayPause={onTogglePlayPause}
+            onPlayPause={onPlayPause}
             onSeek={onSeek}
-            onPlayNext={onPlayNext}
-            onPlayPrevious={onPlayPrevious}
+            onNext={onNext}
+            onPrevious={onPrevious}
             onVolumeChange={onVolumeChange}
-            onToggleMute={onToggleMute}
-            onToggleShuffle={onToggleShuffle}
-            onToggleRepeat={onToggleRepeat}
+            onMuteToggle={onMuteToggle}
+            onShuffleToggle={onShuffleToggle}
+            onRepeatToggle={onRepeatToggle}
             formatTime={formatTime}
           />
         </div>
