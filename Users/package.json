@@ -20,6 +20,8 @@
     "react-router-dom": "^7.9.6",
     "socket.io-client": "^4.8.1",
     "tailwindcss": "^4.1.17",
+    "uuid": "^13.0.0",
+    "uuidv4": "^6.2.13",
     "vite-plugin-pwa": "^1.2.0"
   },
   "devDependencies": {

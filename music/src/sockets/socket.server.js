@@ -3,6 +3,7 @@ const jwt = require("jsonwebtoken");
 const cookie = require("cookie"); // ye package is used to parse cookies 
 
 const onlineUsers = new Map();
+const room = new Map();
 
 function initSocketServer(httpServer) {
     const io = new Server(httpServer, {
@@ -38,12 +39,14 @@ io.on("connection", (socket) => {
     // agar room nahi hova to too create kar dega 
     onlineUsers.set(socket.user.email,socket.id); // map me add kar diya user ko
     socket.on("check-user-online", (email) => {
+        console.log("Checking online status for:", email);
   const isOnline = onlineUsers.has(email); // agar value true email and ture  and agar email nahi hae too false
   socket.emit("user-status", {
     email,
     isOnline,
   });
 });
+
     socket.on('play',(data)=>{
         console.log('Play event received on server with data:', data);
         const musicId= data.musicId 
@@ -53,7 +56,56 @@ io.on("connection", (socket) => {
         //   broadcast → send to others only (not the sender)
        // .to(socket.user.id) → send only to that room (that user)
     })
+
+    socket.on('createroom',({roomId, password })=>{
+        if(room.has(roomId)){
+            socket.emit('roomError',{success:false, message:'Room ID already exists'});
+        }
+        room.set(roomId ,{password , users:[socket.user.id]})
+        socket.join(roomId) // jo user room create karega wo usme join ho jayega default like admin
+         socket.emit("roomCreated", roomId);
+    })
+    // jab koi user room join karega like dusra user
+    socket.on('joinroom',({roomId, password})=>{
+        const rom =  room.get(roomId);
+        if(!rom){
+            socket.emit('roomError',{success:false, message:'Room does not exist'});
+            return;
+        }
+        if(rom.password !== password){
+            socket.emit('roomError',{success:false, message:'Incorrect password'});
+            return;
+        }
+                if (!rom.users.includes(socket.user.id)) {
+    rom.users.push(socket.user.id);
+}
+
+
+        socket.join(roomId);
+        socket.emit("roomJoined", roomId);
+
+    })
+    socket.on('send-audio',({roomId, 
+  src, 
+  thumbnail, 
+  currentTime, 
+  volume })=>{
+// broadcast to sabko send kar dega except sender ko
+
+        socket.broadcast.to(roomId).emit('receive-audio', {
+             src,
+    thumbnail,
+    currentTime,
+    volume
+        }); 
+
+
+    })
+
   
+
+
+
 
     socket.on("disconnect", () => {
         socket.leave(socket.user.id) // hamre resouce kam katam ho esliye 
@@ -69,3 +121,4 @@ io.on("connection", (socket) => {
 
 }
 module.exports = {initSocketServer};
+// 30 vaildation to create roorm and audo emti after 30 min gernate a new room id

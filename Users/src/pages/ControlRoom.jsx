@@ -1,7 +1,8 @@
  import { useState, useEffect, useRef } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { data, useNavigate, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchMusicData } from '../Store/actions/musicaction';
+import { v4 as uuidv4 } from 'uuid';
 import {
   SessionCodeCard,
   NowPlaying,
@@ -10,7 +11,7 @@ import {
   CheckUserOnline,
   LoadingState,
 } from '../components/ControlRoom';
-
+import socketInstance from '../socket.service.js';
 const ControlRoom = () => {
   const navigate = useNavigate();
   const dispatch = useDispatch();
@@ -26,13 +27,14 @@ const ControlRoom = () => {
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [sessionCreated, setSessionCreated] = useState(false);
+  const [cooldownTime, setCooldownTime] = useState(0); // Cooldown in seconds
+  const cooldownRef = useRef(null);
   
   // Check User Online States
   const [checkEmail, setCheckEmail] = useState('');
   const [checkedUsers, setCheckedUsers] = useState([]);
   const [isChecking, setIsChecking] = useState(false);
-  const [isSocketConnected, setIsSocketConnected] = useState(false);
-  
   // Independent Music Player States
   const [currentSong, setCurrentSong] = useState(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -95,7 +97,7 @@ const ControlRoom = () => {
       audio.pause();
     }
   }, [isPlaying, currentSong]);
-
+ 
   // Load new song
   useEffect(() => {
     const audio = audioRef.current;
@@ -106,6 +108,9 @@ const ControlRoom = () => {
     if (isPlaying) {
       audio.play().catch(err => console.log('Play error:', err));
     }
+  
+
+
   }, [currentSong]);
 
   const fetchRoomData = async () => {
@@ -136,16 +141,103 @@ const ControlRoom = () => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Generate random password
+  const generatePassword = () => {
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return password;
+  };
+
+  // Create new session with UUID and password
+  const createSession = () => {
+    // Check if cooldown is active
+    if (cooldownTime > 0) return;
+    
+    const sessionId = uuidv4().split('-')[0].toUpperCase(); // Short UUID (first 8 chars)
+    const sessionPassword = generatePassword();
+    
+    setRoomData(prev => ({
+      ...prev,
+      code: sessionId,
+      password: sessionPassword,
+      isPrivate: true,
+      createdAt: new Date().toISOString(),
+    }));
+    
+    setSessionCreated(true);
+    console.log("Session Created:", { id: sessionId, password: sessionPassword });
+    
+    // Emit to socket to create room on server
+    socketInstance.emit('create-session', { 
+      sessionId, 
+      password: sessionPassword,
+      hostEmail: user?.email 
+    });
+
+    // Start 30 minute cooldown (1800 seconds)
+    setCooldownTime(30 * 60);
+    
+    // Clear any existing interval
+    if (cooldownRef.current) {
+      clearInterval(cooldownRef.current);
+    }
+    
+    // Start countdown timer
+    cooldownRef.current = setInterval(() => {
+      setCooldownTime(prev => {
+        if (prev <= 1) {
+          clearInterval(cooldownRef.current);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  // Cleanup interval on unmount
+  useEffect(() => {
+    return () => {
+      if (cooldownRef.current) {
+        clearInterval(cooldownRef.current);
+      }
+    };
+  }, []);
+
+  // Format cooldown time as MM:SS
+  const formatCooldown = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+  };
+
   const handleCheckUserOnline = () => {
     if (!checkEmail.trim()) return;
+    console.log("Checking online status for:", checkEmail);
     setIsChecking(true);
-    // TODO: Implement check user online functionality
-    setTimeout(() => {
-      setCheckedUsers(prev => [...prev, { email: checkEmail, isOnline: Math.random() > 0.5 }]);
-      setIsChecking(false);
-    }, 1000);
+    socketInstance.emit('check-user-online', checkEmail);
     setCheckEmail('');
   };
+
+  useEffect(() => {
+    socketInstance.on('user-status', (data) => {
+      console.log("Received user status update", data);
+      // Update checkedUsers with the response
+      setCheckedUsers(prev => {
+        // Remove existing entry for this email if exists
+        const filtered = prev.filter(u => u.email !== data.email);
+        return [...filtered, { email: data.email, isOnline: data.isOnline }];
+      });
+      setIsChecking(false);
+    });
+
+    return () => {
+      socketInstance.off('user-status');
+    };
+  }, []);
+
 
   // Music Player Functions
   const handlePlaySong = (song, index) => {
@@ -328,6 +420,61 @@ const ControlRoom = () => {
 
         {/* Right Column - Check User & Session Controls */}
         <div className="space-y-4">
+          {/* Create Session Button */}
+          <div className="bg-[#181818] rounded-xl p-6 border border-[#282828]">
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              🎵 Session Controls
+            </h2>
+            
+            {!sessionCreated ? (
+              <button
+                onClick={createSession}
+                className="w-full px-6 py-3 bg-[#1db954] text-black rounded-lg font-medium hover:bg-[#1ed760] transition-colors flex items-center justify-center gap-2"
+              >
+                <span className="text-lg">+</span>
+                Create New Session
+              </button>
+            ) : (
+              <div className="space-y-3">
+                <div className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
+                  <span className="text-[#b3b3b3] text-sm">Session ID:</span>
+                  <span className="text-white font-mono font-bold">{roomData?.code}</span>
+                </div>
+                <div className="flex items-center justify-between p-3 bg-[#282828] rounded-lg">
+                  <span className="text-[#b3b3b3] text-sm">Password:</span>
+                  <span className="text-white font-mono">{showPassword ? roomData?.password : '••••••••'}</span>
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="flex-1 px-4 py-2 bg-[#282828] text-white rounded-lg hover:bg-[#383838] transition-colors text-sm"
+                  >
+                    {showPassword ? 'Hide' : 'Show'} Password
+                  </button>
+                  <button
+                    onClick={createSession}
+                    disabled={cooldownTime > 0}
+                    className={`flex-1 px-4 py-2 rounded-lg transition-colors text-sm font-medium ${
+                      cooldownTime > 0 
+                        ? 'bg-[#383838] text-[#b3b3b3] cursor-not-allowed' 
+                        : 'bg-[#1db954] text-black hover:bg-[#1ed760]'
+                    }`}
+                  >
+                    {cooldownTime > 0 ? formatCooldown(cooldownTime) : 'New Session'}
+                  </button>
+                </div>
+                {cooldownTime > 0 && (
+                  <p className="text-yellow-500 text-xs text-center mt-2">
+                    ⏱️ Wait {formatCooldown(cooldownTime)} before creating a new session
+                  </p>
+                )}
+                <p className="text-[#b3b3b3] text-xs text-center mt-2">
+                  Share the Session ID and Password with friends to join!
+                </p>
+              </div>
+            )}
+          </div>
+
           {/* Check User Online */}
           <CheckUserOnline
             checkEmail={checkEmail}
@@ -336,7 +483,6 @@ const ControlRoom = () => {
             setCheckedUsers={setCheckedUsers}
             isChecking={isChecking}
             handleCheckUserOnline={handleCheckUserOnline}
-            isSocketConnected={isSocketConnected}
           />
 
           {/* End Session Button */}

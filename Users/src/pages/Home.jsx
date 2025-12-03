@@ -26,6 +26,7 @@ const Home = () => {
     });
    
     return () => {
+      socketInstance.off('connect');
     };
 
   }, [dispatch]);

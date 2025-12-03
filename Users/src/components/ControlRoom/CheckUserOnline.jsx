@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { FaSearch, FaCircle, FaTimes, FaSpinner } from 'react-icons/fa';
 
 const CheckUserOnline = ({ 
@@ -7,14 +6,13 @@ const CheckUserOnline = ({
   checkedUsers, 
   setCheckedUsers,
   isChecking, 
-  handleCheckUserOnline,
-  isSocketConnected 
+  handleCheckUserOnline
 }) => {
   const handleCheck = () => {
     if (checkEmail.trim()) {
       handleCheckUserOnline();
     }
-  };
+  }
 
   const handleRemoveUser = (email) => {
     setCheckedUsers(prev => prev.filter(u => u.email !== email));
@@ -33,14 +31,6 @@ const CheckUserOnline = ({
         Check User Status
       </h2>
 
-      {/* Socket Status */}
-      <div className="mb-4 flex items-center gap-2">
-        <FaCircle className={`text-[8px] ${isSocketConnected ? 'text-green-500' : 'text-red-500'}`} />
-        <span className="text-sm text-[#b3b3b3]">
-          {isSocketConnected ? 'Connected to server' : 'Disconnected'}
-        </span>
-      </div>
-
       {/* Search Input */}
       <div className="flex gap-2 mb-4">
         <input
@@ -50,11 +40,11 @@ const CheckUserOnline = ({
           onKeyPress={handleKeyPress}
           placeholder="Enter email to check..."
           className="flex-1 bg-[#282828] text-white px-4 py-3 rounded-lg border border-[#404040] focus:border-[#1db954] focus:outline-none text-sm"
-          disabled={!isSocketConnected || isChecking}
+          disabled={isChecking}
         />
         <button
           onClick={handleCheck}
-          disabled={!isSocketConnected || isChecking || !checkEmail.trim()}
+          disabled={isChecking || !checkEmail.trim()}
           className="px-6 py-3 bg-[#1db954] text-black rounded-lg font-medium hover:bg-[#1ed760] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         >
           {isChecking ? (
