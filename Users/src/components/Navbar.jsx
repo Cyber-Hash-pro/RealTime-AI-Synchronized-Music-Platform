@@ -28,8 +28,10 @@ const Navbar = ({ onMenuClick }) => {
   }, []);
 
   const handleLogout = async () => {
+    localStorage.removeItem('user');
     await dispatch(logoutUser());
     setIsSettingsOpen(false);
+    
     navigate('/login');
   };
 

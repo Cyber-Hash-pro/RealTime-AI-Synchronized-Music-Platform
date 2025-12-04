@@ -48,7 +48,7 @@ io.on("connection", (socket) => {
 });
 
     socket.on('play',(data)=>{
-        console.log('Play event received on server with data:', data);
+        // console.log('Play event received on server with data:', data);
         const musicId= data.musicId 
         // broadcast means sabko send kar dega except sender ko 
         // broadcast.to kya karta hae specific room me send kar dega user ko 
@@ -95,6 +95,8 @@ io.on("connection", (socket) => {
   currentTime, 
   volume })=>{
 // broadcast to sabko send kar dega except sender ko
+//  console.log("Audio data received for room:",  src , senderDetails, roomId, thumbnail, currentTime, volume);
+
 
         socket.broadcast.to(roomId).emit('receive-audio', {
              src,
@@ -103,9 +105,10 @@ io.on("connection", (socket) => {
     currentTime,
     volume
         }); 
-
-
     })
+
+
+
 
   
 

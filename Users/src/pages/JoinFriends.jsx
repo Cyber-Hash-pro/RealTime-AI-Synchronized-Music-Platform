@@ -288,6 +288,8 @@ const JoinFriends = () => {
               Exit
             </button>
           </div>
+         
+          
 
           {/* Main Content */}
           <div className="flex-1 flex flex-col items-center justify-center px-6 py-8">
