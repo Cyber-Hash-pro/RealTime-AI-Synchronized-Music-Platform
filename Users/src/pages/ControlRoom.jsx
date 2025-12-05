@@ -120,9 +120,9 @@ const ControlRoom = () => {
     try {
       setLoading(true);
       setRoomData({
-        code: code || 'XYZ123',
+        code: null,
         name: 'Chill Vibes Session',
-        password: 'music123',
+        password: null,
         isPrivate: true,
         host: {
           id: user?.id || '1',
@@ -139,9 +139,11 @@ const ControlRoom = () => {
   };
 
   const copyCode = () => {
-    navigator.clipboard.writeText(roomData?.code || code);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    if (roomData?.code) {
+      navigator.clipboard.writeText(roomData.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
   };
 
   // Generate random password

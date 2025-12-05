@@ -1,6 +1,22 @@
 import { FaCopy, FaCheck, FaLock, FaEye, FaEyeSlash } from 'react-icons/fa';
 
 const SessionCodeCard = ({ code, isPrivate, password, copied, showPassword, onCopy, onTogglePassword }) => {
+  // If no code yet, show placeholder
+  if (!code) {
+    return (
+      <div className="bg-[#282828] rounded-lg p-4 border border-[#404040]">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[#b3b3b3] text-xs font-medium">Session Code</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-lg font-mono text-[#535353]">
+            Create a session to get code
+          </span>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-[#282828] rounded-lg p-4 border border-[#404040]">
       <div className="flex items-center justify-between mb-2">
