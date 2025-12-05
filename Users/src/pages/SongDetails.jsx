@@ -13,6 +13,7 @@ import {
   ErrorState
 } from '../components/SongDetails';
 import socketInstance from '../socket.service.js';
+import axios from 'axios';
 
 
 const SongDetails = () => {
@@ -46,6 +47,19 @@ const SongDetails = () => {
   // Check if this song is currently playing
   const isCurrentSong = currentSong && currentSong._id === songData?._id;
 
+  // Check if song is already liked
+  const checkIfLiked = useCallback(async () => {
+    try {
+      const { data } = await axios.get('http://localhost:3001/api/music/all/likedSongs', {
+        withCredentials: true
+      });
+      const likedSongIds = data.likedSongs?.map(item => item.songId?._id) || [];
+      setIsLiked(likedSongIds.includes(id));
+    } catch (err) {
+      console.error('Error checking liked status:', err);
+    }
+  }, [id]);
+
   // Fetch song data using Redux
   const fetchSong = useCallback(async () => {
     try {
@@ -77,12 +91,13 @@ const SongDetails = () => {
     
     fetchSong();
     fetchAllSongs();
+    checkIfLiked();
     
     // Proper cleanup - just reset refs, don't fetch again
     return () => {
       hasPlayedRef.current = false;
     };
-  }, [id, fetchSong, fetchAllSongs]);
+  }, [id, fetchSong, fetchAllSongs, checkIfLiked]);
 
   // Auto-play when song data loads - only once per song
   useEffect(() => {
@@ -114,7 +129,26 @@ const SongDetails = () => {
     }
   }, [isCurrentSong, togglePlayPause, songData, playSong]);
 
-  const handleLike = useCallback(() => setIsLiked(prev => !prev), []);
+  const handleLike = useCallback(async () => {
+    try {
+      if (isLiked) {
+        // TODO: Add unlike API when available
+        setIsLiked(false);
+      } else {
+        await axios.post(`http://localhost:3001/api/music/likeSong/${id}`, {}, {
+          withCredentials: true
+        });
+        setIsLiked(true);
+      }
+    } catch (err) {
+      console.error('Error liking song:', err);
+      // If already liked, just toggle the state
+      if (err.response?.status === 400) {
+        setIsLiked(true);
+      }
+    }
+  }, [id, isLiked]);
+
   const handleGoBack = useCallback(() => navigate(-1), [navigate]);
 
   // Loading state

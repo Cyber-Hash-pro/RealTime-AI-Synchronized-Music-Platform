@@ -1,116 +1,168 @@
-import { FaHeart } from 'react-icons/fa';
-import SongCard from '../components/SongCard';
-
-// Dummy liked songs data
-const likedSongs = [
-  {
-    id: 101,
-    title: "Blinding Lights",
-    artist: "The Weeknd",
-    cover: "https://i.scdn.co/image/ab67616d0000b273c4f0b3db0ab1a00e1a6bb85c",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273c4f0b3db0ab1a00e1a6bb85c",
-    duration: "3:22",
-    likes: 1247
-  },
-  {
-    id: 102,
-    title: "Stay",
-    artist: "The Kid LAROI & Justin Bieber",
-    cover: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273ba5db46f4b838ef6027e6f96",
-    duration: "2:21",
-    likes: 987
-  },
-  {
-    id: 103,
-    title: "Good 4 U",
-    artist: "Olivia Rodrigo",
-    cover: "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273a91c10fe9472d9bd89802e5a",
-    duration: "2:58",
-    likes: 856
-  },
-  {
-    id: 104,
-    title: "Levitating",
-    artist: "Dua Lipa",
-    cover: "https://i.scdn.co/image/ab67616d0000b273f056d74a8adf73bb6b533604",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273f056d74a8adf73bb6b533604",
-    duration: "3:23",
-    likes: 1143
-  },
-  {
-    id: 105,
-    title: "Peaches",
-    artist: "Justin Bieber ft. Daniel Caesar & Giveon",
-    cover: "https://i.scdn.co/image/ab67616d0000b273cd945b4e3de57edd28481a3f",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273cd945b4e3de57edd28481a3f",
-    duration: "3:18",
-    likes: 742
-  },
-  {
-    id: 106,
-    title: "Industry Baby",
-    artist: "Lil Nas X & Jack Harlow",
-    cover: "https://i.scdn.co/image/ab67616d0000b273986b8b3a64fb94e5b08e84df",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273986b8b3a64fb94e5b08e84df",
-    duration: "3:32",
-    likes: 923
-  },
-  {
-    id: 107,
-    title: "Heat Waves",
-    artist: "Glass Animals",
-    cover: "https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273bb54dde68cd23e2a268ae0f5",
-    duration: "3:58",
-    likes: 645
-  },
-  {
-    id: 108,
-    title: "Bad Habits",
-    artist: "Ed Sheeran",
-    cover: "https://i.scdn.co/image/ab67616d0000b273fb9108286e25f4dccb8a6482",
-    coverUrl: "https://i.scdn.co/image/ab67616d0000b273fb9108286e25f4dccb8a6482",
-    duration: "3:51",
-    likes: 598
-  }
-];
+import { useEffect, useState } from 'react';
+import { FaHeart, FaPlay, FaMusic } from 'react-icons/fa';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useMusicPlayer } from '../contexts/MusicContext';
 
 const LikedSongs = () => {
+  const navigate = useNavigate();
+  const { playSong } = useMusicPlayer();
+  const [likedSongs, setLikedSongs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [hoveredId, setHoveredId] = useState(null);
+
+  useEffect(() => {
+    fetchLikedSongs();
+  }, []);
+
+  const fetchLikedSongs = async () => {
+    try {
+      setLoading(true);
+      const { data } = await axios.get('http://localhost:3001/api/music/all/likedSongs', {
+        withCredentials: true
+      });
+      
+      // Extract song data from the populated songId
+      const songs = data.likedSongs?.map(item => item.songId).filter(song => song) || [];
+      setLikedSongs(songs);
+    } catch (err) {
+      console.error('Error fetching liked songs:', err);
+      setError('Failed to load liked songs');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handlePlayAll = () => {
+    if (likedSongs.length > 0) {
+      playSong(likedSongs[0], likedSongs);
+    }
+  };
+
+  const handlePlaySong = (song, index) => {
+    playSong(song, likedSongs);
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-[#1db954] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-white text-lg">Loading your liked songs...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="px-4 py-6 sm:p-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row items-center gap-6 mb-8 p-6 bg-gradient-to-r from-purple-600 to-pink-600 rounded-lg">
-        <div className="w-48 h-48 bg-gradient-to-br from-purple-400 to-pink-400 rounded-lg flex items-center justify-center shadow-xl">
-          <FaHeart className="text-white text-6xl" />
-        </div>
-        <div className="text-center sm:text-left">
-          <p className="text-sm font-semibold text-white/80 uppercase tracking-wide mb-2">Playlist</p>
-          <h1 className="text-4xl sm:text-6xl font-bold text-white mb-4">Liked Songs</h1>
-          <p className="text-white/90 text-lg">
-            {likedSongs.length} songs • Total likes: {likedSongs.reduce((sum, song) => sum + song.likes, 0)}
-          </p>
+    <div className="min-h-screen">
+      {/* Header Section with Gradient */}
+      <div className="bg-gradient-to-b from-purple-700 via-purple-900 to-[#121212] px-4 sm:px-8 pt-8 pb-8">
+        <div className="flex flex-col sm:flex-row items-center gap-6 max-w-6xl mx-auto">
+          {/* Liked Songs Icon */}
+          <div className="w-48 h-48 sm:w-56 sm:h-56 bg-gradient-to-br from-purple-400 to-purple-700 rounded-lg flex items-center justify-center shadow-2xl">
+            <FaHeart className="text-white text-7xl drop-shadow-lg" />
+          </div>
+          
+          {/* Playlist Info */}
+          <div className="text-center sm:text-left flex-1">
+            <p className="text-sm font-medium text-white/70 uppercase tracking-wider mb-2">
+              Playlist
+            </p>
+            <h1 className="text-5xl sm:text-7xl font-bold text-white mb-4 drop-shadow-lg">
+              Liked Songs
+            </h1>
+            <p className="text-white/80 text-lg">
+              {likedSongs.length} song{likedSongs.length !== 1 ? 's' : ''} you love
+            </p>
+          </div>
         </div>
       </div>
 
-      {/* Songs Grid */}
-      <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6">
-        {likedSongs.map((song) => (
-          <SongCard key={song.id} song={song} />
-        ))}
+      {/* Action Buttons */}
+      <div className="px-4 sm:px-8 py-6 max-w-6xl mx-auto">
+        <div className="flex items-center gap-4">
+          <button
+            onClick={handlePlayAll}
+            disabled={likedSongs.length === 0}
+            className="w-14 h-14 bg-[#d36582] rounded-full flex items-center justify-center hover:scale-105 hover:bg-[#1ed760] transition-all shadow-lg shadow-[#1db954]/30 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <FaPlay className="text-black text-xl ml-1" />
+          </button>
+        </div>
       </div>
 
-      {/* Empty State - Show when no liked songs */}
-      {likedSongs.length === 0 && (
-        <div className="text-center py-16">
-          <FaHeart className="text-6xl text-[#b3b3b3] mx-auto mb-4" />
-          <h3 className="text-2xl font-bold text-white mb-2">Songs you like will appear here</h3>
-          <p className="text-[#b3b3b3] text-lg">
-            Save songs by tapping the heart icon.
-          </p>
-        </div>
-      )}
+      {/* Songs List */}
+      <div className="px-4 sm:px-8 pb-32 max-w-6xl mx-auto">
+        {likedSongs.length > 0 ? (
+          <div className="space-y-1">
+            {likedSongs.map((song, index) => (
+              <div
+                key={song._id}
+                onClick={() => handlePlaySong(song, index)}
+                onMouseEnter={() => setHoveredId(song._id)}
+                onMouseLeave={() => setHoveredId(null)}
+                className="flex items-center gap-4 p-3 rounded-lg hover:bg-[#282828] transition-colors cursor-pointer group"
+              >
+                {/* Track Number / Play Icon */}
+                <div className="w-8 text-center flex-shrink-0">
+                  {hoveredId === song._id ? (
+                    <FaPlay className="text-white text-sm mx-auto" />
+                  ) : (
+                    <span className="text-[#b3b3b3]">{index + 1}</span>
+                  )}
+                </div>
+
+                {/* Album Art */}
+                <div className="w-12 h-12 flex-shrink-0">
+                  {song.coverUrl ? (
+                    <img
+                      src={song.coverUrl}
+                      alt={song.title}
+                      className="w-full h-full object-cover rounded"
+                    />
+                  ) : (
+                    <div className="w-full h-full bg-[#282828] rounded flex items-center justify-center">
+                      <FaMusic className="text-[#b3b3b3]" />
+                    </div>
+                  )}
+                </div>
+
+                {/* Song Info */}
+                <div className="flex-1 min-w-0">
+                  <p className="text-white font-medium truncate">{song.title}</p>
+                  <p className="text-[#b3b3b3] text-sm truncate">{song.artist}</p>
+                </div>
+
+                {/* Liked Icon */}
+                <FaHeart className="text-[#1db954] flex-shrink-0" />
+
+                {/* Duration */}
+                <span className="text-[#b3b3b3] text-sm w-12 text-right flex-shrink-0">
+                  {song.duration || '3:00'}
+                </span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-20">
+            <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-[#282828] flex items-center justify-center">
+              <FaHeart className="text-4xl text-[#b3b3b3]" />
+            </div>
+            <h3 className="text-white text-2xl font-bold mb-2">Songs you like will appear here</h3>
+            <p className="text-[#b3b3b3] text-lg mb-6">
+              Save songs by tapping the heart icon
+            </p>
+            <button
+              onClick={() => navigate('/')}
+              className="bg-[#1db954] text-black font-bold px-8 py-3 rounded-full hover:scale-105 transition-transform"
+            >
+              Browse Songs
+            </button>
+          </div>
+        )}
+      </div>
     </div>
   );
 };

@@ -13,8 +13,12 @@ import CreatePlaylist from './pages/CreatePlaylist';
 import MyPlaylists from './pages/MyPlaylists';
 import JoinFriends from './pages/JoinFriends';
 import ControlRoom from './pages/ControlRoom';
+import MoodDetector from './pages/MoodDetector';
+import MoodSongs from './pages/MoodSongs';
+import Search from './pages/Search';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
+import UserPlaylist from './pages/userPlaylist';
 import { checkAuthStatus } from './Store/actions/userAction';
 
 const App = () => {
@@ -44,10 +48,14 @@ const App = () => {
             <Route path="liked-songs" element={<LikedSongs />} />
             <Route path="artist-playlists" element={<ArtistPlaylists />} />
             <Route path="playlist/:id" element={<SinglePlaylist />} />
+            <Route path='user-playlist/:id' element={<UserPlaylist/>} />
             <Route path="create-playlist" element={<CreatePlaylist />} />
             <Route path="my-playlists" element={<MyPlaylists />} />
             <Route path="join-friends" element={<JoinFriends />} />
             <Route path="control-room/:code" element={<ControlRoom />} />
+            <Route path="mood-detector" element={<MoodDetector />} />
+            <Route path="mood-songs/:mood" element={<MoodSongs />} />
+            <Route path="search" element={<Search />} />
           </Route>
         </Routes>
       </Router>

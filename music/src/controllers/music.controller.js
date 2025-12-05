@@ -1,6 +1,7 @@
 const musicModel = require('../model/music.model.js');
 const playlistModel = require('../model/playlist.model.js');
 const {uploadMusicAndCover} = require('../services/storge.service.js')
+const LikeSong = require('../model/likesong.model.js');
 const UserPlaylist = require('../model/userplaylist.model.js');
 
 const uploadMusic = async(req,res)=>{
@@ -70,6 +71,7 @@ const createPlaylist  = async(req,res)=>{
 
 const getPlaylists = async(req,res)=>{
     try{
+
         const playlists = await playlistModel.find({artistId:req.user.id});
         return res.status(200).json({message:"Playlists fetched successfully", playlists:playlists})
 
@@ -173,14 +175,77 @@ const getSpecificUserPlaylists = async(req,res)=>{
     const userId = req.params.id;
     console.log("Fetching playlists for user ID:", userId);
     try{
-        const playlists = await UserPlaylist.find({userId:userId});
+        const playlists = await UserPlaylist.findById(userId)
+        .populate("musics");
         return res.status(200).json({message:"Specific User Playlists fetched successfully", playlists:playlists})
     }catch(error){
         console.log("Error in fetching specific user playlists", error);
         return res.status(500).json({message:"Internal server error", error})
     }
 }
+const getMusicByMood = async(req,res)=>{
+    const mood = req.params.mood;
+    try{
+        const musics = await musicModel.find({mood:mood}).lean();
+        return res.status(200).json({message:"Music fetched successfully by mood", musics:musics})
+
+    }catch(error){
+        console.log("Error in fetching music by mood", error);
+        return res.status(500).json({message:"Internal server error", error})
+
+    }
+}
+
+const getAllLikedSongs = async(req,res)=>{
+    try{
+        const likedSongs = await LikeSong.find({userId:req.user.id}).populate('songId').lean();
+        return res.status(200).json({message:"Liked songs fetched successfully", likedSongs:likedSongs})
+
+    }catch(error){
+        console.log("Error in fetching liked songs", error);
+        return res.status(500).json({message:"Internal server error", error})
+
+    }
+};
+
+const likeSong = async(req,res)=>{
+    const songId = req.params.id;
+    try{
+        // Check if the song is already liked by the user
+        const existingLike = await LikeSong.findOne({userId:req.user.id, songId:songId});
+        if(existingLike){
+            return res.status(400).json({message:"Song already liked"});
+        }
+
+        const likedSong = await LikeSong.create({
+            userId:req.user.id,
+            songId:songId
+        });
+        return res.status(201).json({message:"Song liked successfully", likedSong:likedSong})
+
+    }catch(error){
+        console.log("Error in liking song", error);
+        return res.status(500).json({message:"Internal server error", error})
+
+    }
+};
+const searchMusic = async (req, res) => {
+try {
+    const query = req.params.query;
+    const musics = await musicModel.find({
+        $text: { $search: query }
+    })
+    res.status(200).json({ message: "Search results fetched successfully", musics: musics });
+
+}catch (error) {
+    res.status(500).json({ message: "Internal server error", error });
+}
 
 
+}
 
-module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById,getAllPlaylists,createUserPlaylist,getUserPlaylists,getSpecificUserPlaylists};
+
+module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById,getAllPlaylists,createUserPlaylist,getUserPlaylists,getSpecificUserPlaylists,getMusicByMood,getAllLikedSongs,likeSong, searchMusic};
+// Query look title?value=hello worls  to search song with title hello worls
+// page?key1=value1&key2=value2
+// params -: id

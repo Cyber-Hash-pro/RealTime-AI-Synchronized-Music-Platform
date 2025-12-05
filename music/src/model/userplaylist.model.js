@@ -10,6 +10,7 @@ const userPlaylistSchema = new mongoose.Schema({
     },
     musics: [{
         type: mongoose.Schema.Types.ObjectId,
+        ref: 'music'
     }]
 }, { timestamps: true });
 

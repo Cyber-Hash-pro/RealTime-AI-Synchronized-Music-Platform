@@ -1,8 +1,33 @@
-import { FaPlay } from 'react-icons/fa';
+import { useState } from 'react';
+import { FaPlay, FaHeart } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 
 const SongCard = ({ song }) => {
   const navigate = useNavigate();
+  const [isLiked, setIsLiked] = useState(false);
+  const [isLiking, setIsLiking] = useState(false);
+
+  const handleLike = async (e) => {
+    e.stopPropagation(); // Prevent navigation
+    if (isLiking) return;
+    
+    try {
+      setIsLiking(true);
+      await axios.post(`http://localhost:3001/api/music/likeSong/${song._id}`, {}, {
+        withCredentials: true
+      });
+      setIsLiked(true);
+    } catch (err) {
+      console.error('Error liking song:', err);
+      if (err.response?.status === 400) {
+        // Already liked
+        setIsLiked(true);
+      }
+    } finally {
+      setIsLiking(false);
+    }
+  };
 
   return (
     <div
@@ -20,6 +45,18 @@ const SongCard = ({ song }) => {
             <FaPlay className="text-xl ml-1" />
           </button>
         </div>
+        
+        {/* Like Button */}
+        <button
+          onClick={handleLike}
+          className={`absolute top-2 right-2 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-all ${
+            isLiked 
+              ? 'bg-[#1db954] text-black' 
+              : 'bg-black/60 text-white hover:bg-black/80'
+          }`}
+        >
+          <FaHeart className={`text-sm ${isLiked ? 'text-black' : ''}`} />
+        </button>
       </div>
       <h3 className="text-white font-semibold text-base mb-1 truncate">
         {song.title}

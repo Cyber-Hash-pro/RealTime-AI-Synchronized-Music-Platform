@@ -1,17 +1,26 @@
-import { FaSearch, FaBars, FaChevronDown, FaBell, FaUser, FaCog, FaSignOutAlt, FaRobot, FaTimes, FaPalette, FaGlobe, FaMicrophone, FaLock, FaBaby, FaCircle, FaBroadcastTower } from 'react-icons/fa';
+import { FaSearch, FaBars, FaChevronDown, FaBell, FaUser, FaCog, FaSignOutAlt, FaRobot, FaTimes, FaPalette, FaGlobe, FaMicrophone, FaLock, FaBaby, FaCircle, FaBroadcastTower, FaPlay, FaMusic } from 'react-icons/fa';
 import { useState, useRef, useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../Store/actions/userAction';
 import socketInstance from '../socket.service.js';
+import axios from 'axios';
 
 const Navbar = ({ onMenuClick }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
   const [activeSection, setActiveSection] = useState('account');
   const [cyberAIConnected, setCyberAIConnected] = useState(false);
   const settingsRef = useRef(null);
+  const searchRef = useRef(null);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+  
+  // Search State
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const searchTimeoutRef = useRef(null);
   
   // Session Invite State
   const [sessionInvite, setSessionInvite] = useState(null);
@@ -20,6 +29,72 @@ const Navbar = ({ onMenuClick }) => {
   
   // Get user from Redux store
   const { user, isAuthenticated } = useSelector((state) => state.user);
+
+  // Search music function
+  const searchMusic = async (query) => {
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      const { data } = await axios.get(`http://localhost:3001/api/music/search/${encodeURIComponent(query)}`, {
+        withCredentials: true
+      });
+      setSearchResults(data.musics || []);
+      setShowSearchResults(true);
+    } catch (err) {
+      console.error('Search error:', err);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  // Debounced search
+  const handleSearchChange = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear previous timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    // Debounce search
+    searchTimeoutRef.current = setTimeout(() => {
+      searchMusic(query);
+    }, 300);
+  };
+
+  // Handle clicking on a search result
+  const handleResultClick = (songId) => {
+    setShowSearchResults(false);
+    setSearchQuery('');
+    navigate(`/song/${songId}`);
+  };
+
+  // Handle Enter key to navigate to search page
+  const handleSearchKeyDown = (e) => {
+    if (e.key === 'Enter' && searchQuery.trim()) {
+      setShowSearchResults(false);
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
+  };
+
+  // Close search results when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchRef.current && !searchRef.current.contains(event.target)) {
+        setShowSearchResults(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Listen for session invites
   useEffect(() => {
@@ -112,10 +187,6 @@ const Navbar = ({ onMenuClick }) => {
         items: [
           { id: 'general', label: 'General', icon: <FaCog /> },
           { id: 'notifications', label: 'Notifications', icon: <FaBell /> },
-          { id: 'personalization', label: 'Personalization', icon: <FaPalette /> },
-          { id: 'security', label: 'Security', icon: <FaLock /> },
-          { id: 'privacy', label: 'Privacy', icon: <FaLock /> },
-          { id: 'parental', label: 'Parental controls', icon: <FaBaby /> }
         ]
       },
       {
@@ -404,14 +475,86 @@ const Navbar = ({ onMenuClick }) => {
         </button>
 
         {/* Search Bar */}
-        <div className="flex-1 max-w-md lg:max-w-2xl">
+        <div className="flex-1 max-w-md lg:max-w-2xl" ref={searchRef}>
           <div className="relative">
-            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#b3b3b3] text-sm pointer-events-none" />
+            <FaSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#b3b3b3] text-sm pointer-events-none z-10" />
             <input
               type="text"
+              value={searchQuery}
+              onChange={handleSearchChange}
+              onKeyDown={handleSearchKeyDown}
+              onFocus={() => searchResults.length > 0 && setShowSearchResults(true)}
               placeholder="What do you want to listen to?"
               className="w-full bg-[#242424] text-white text-sm lg:text-[15px] pl-12 pr-4 py-3 lg:py-3.5 rounded-full focus:outline-none focus:ring-2 focus:ring-[#1db954] focus:bg-[#2a2a2a] placeholder-[#a7a7a7] transition-all font-normal hover:bg-[#2a2a2a]"
             />
+            
+            {/* Loading indicator */}
+            {isSearching && (
+              <div className="absolute right-4 top-1/2 transform -translate-y-1/2">
+                <div className="w-4 h-4 border-2 border-[#1db954] border-t-transparent rounded-full animate-spin"></div>
+              </div>
+            )}
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && searchResults.length > 0 && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#282828] rounded-xl shadow-2xl border border-[#3e3e3e] overflow-hidden z-50 max-h-[400px] overflow-y-auto">
+                <div className="p-3 border-b border-[#3e3e3e]">
+                  <p className="text-[#b3b3b3] text-xs font-medium uppercase tracking-wider">
+                    Songs • {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                  </p>
+                </div>
+                
+                <div className="py-2">
+                  {searchResults.map((song) => (
+                    <div
+                      key={song._id}
+                      onClick={() => handleResultClick(song._id)}
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-[#3e3e3e] cursor-pointer transition-colors group"
+                    >
+                      {/* Album Art */}
+                      <div className="relative w-12 h-12 flex-shrink-0">
+                        {song.coverUrl ? (
+                          <img
+                            src={song.coverUrl}
+                            alt={song.title}
+                            className="w-full h-full object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-[#404040] rounded flex items-center justify-center">
+                            <FaMusic className="text-[#b3b3b3]" />
+                          </div>
+                        )}
+                        {/* Play overlay on hover */}
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center rounded transition-opacity">
+                          <FaPlay className="text-white text-xs" />
+                        </div>
+                      </div>
+                      
+                      {/* Song Info */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-medium truncate group-hover:text-[#1db954] transition-colors">
+                          {song.title}
+                        </p>
+                        <p className="text-[#b3b3b3] text-sm truncate">
+                          {song.artist}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* No results message */}
+            {showSearchResults && searchQuery && searchResults.length === 0 && !isSearching && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#282828] rounded-xl shadow-2xl border border-[#3e3e3e] p-6 z-50">
+                <div className="text-center">
+                  <FaMusic className="text-3xl text-[#b3b3b3] mx-auto mb-3" />
+                  <p className="text-white font-medium mb-1">No results found</p>
+                  <p className="text-[#b3b3b3] text-sm">Try different keywords</p>
+                </div>
+              </div>
+            )}
           </div>
         </div>
 
