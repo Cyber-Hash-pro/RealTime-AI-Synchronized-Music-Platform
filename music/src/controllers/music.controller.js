@@ -192,9 +192,11 @@ const getSpecificUserPlaylists = async(req,res)=>{
     }
 }
 const getMusicByMood = async(req,res)=>{
-    const mood = req.params.mood;
+    const mood = req.query.mood;
+    let limit = parseInt(req.query.limit);
     try{
-        const musics = await musicModel.find({mood:mood}).lean();
+        const musics = await musicModel.find({mood:mood}).lean().select('-artistId').select('_id').limit(limit);
+        console.log("Musics fetched for mood", mood, musics);
         return res.status(200).json({message:"Music fetched successfully by mood", musics:musics})
 
     }catch(error){
@@ -252,29 +254,37 @@ try {
 
 }
 
+const getArtistMusicPlaylists = async(req,res)=>{
+    try{
+        console.log("User ID:", req.user.id);
+        const playlists = await playlistModel.find({artistId:req.user.id}).lean();
+        return res.status(200).json({message:"Artist Playlists fetched successfully", playlists:playlists})
+
+    }catch(error){
+        console.log("Error in fetching artist playlists", error);
+        return res.status(500).json({message:"Internal server error", error})
+
+    }   
+}
 
 
-const musicMoodDectect = async (req, res) => {
-    const musicFile = req.file;
-    console.log('file mood ',req.moodDetectionResult);
-    console.log("Received music file for mood detection:", musicFile);
-    try {
-        const base64Music = musicFile.buffer.toString('base64');
-        const response = await geminisongmooddetection(base64Music);
+const getArtistMusicperPlaylist = async(req,res)=>{
+    const playlistId = req.params.id;
+    try{
+        const playlist = await playlistModel.findOne({ _id: playlistId, artistId: req.user.id }).populate('musics').lean();
+        if(!playlist){
+            return res.status(404).json({message:"Playlist not found"})
+        }
+        return res.status(200).json({message:"Playlist fetched successfully", playlist:playlist})
+
+    }catch(error){
+        console.log("Error in fetching playlist by id for artist", error);
+        return res.status(500).json({message:"Internal server error", error})               
+}
+}
 
 
-        res.status(200).json({ message: "Mood detected successfully", mood: response });
-
-    } catch (error) {
-        console.log("Error in mood detection", error);
-        res.status(500).json({ message: "Internal server error", error });
-    }
-};
-
-
-
-
-module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById,getAllPlaylists,createUserPlaylist,getUserPlaylists,getSpecificUserPlaylists,getMusicByMood,getAllLikedSongs,likeSong, searchMusic, musicMoodDectect};
+module.exports = {uploadMusic,getArtistMusic,createPlaylist,getPlaylists,getAllMusic,getPlaylistById,getMusicById,getAllPlaylists,createUserPlaylist,getUserPlaylists,getSpecificUserPlaylists,getMusicByMood,getAllLikedSongs,likeSong, searchMusic,getArtistMusicPlaylists,getArtistMusicperPlaylist};
 // Query look title?value=hello worls  to search song with title hello worls
 // page?key1=value1&key2=value2
 // params -: id

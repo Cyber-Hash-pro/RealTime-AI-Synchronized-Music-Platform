@@ -12,7 +12,6 @@ const upload = multer({
 
 
 
-router.post('/songdectect',upload.single('music'),moodMiddleware.musicMoodDectect,musicController.musicMoodDectect);
 
 
 
@@ -32,10 +31,13 @@ router.get('/',authMiddlware.authUserMiddleware, musicController.getAllMusic);
 router.get('/get-details/:id',authMiddlware.authUserMiddleware, musicController.getMusicById);
 // for get artist music for :- Artist only jo song artist ne upload kiye hae use fetch karne ke liye
 router.get('/artist-music',authMiddlware.authArtistMiddleware, musicController.getArtistMusic);
+
 // for get all playlists for jo playlist artist ne banayi hae use user ke liye sho remian image fetch remain
 router.get('/allPlaylist',authMiddlware.authUserMiddleware,musicController.getAllPlaylists);
-
-
+// New
+router.get('/artist/playlist',authMiddlware.authArtistMiddleware,musicController.getArtistMusicPlaylists);
+// New
+router.get('/artist/playlist/:id',authMiddlware.authArtistMiddleware,musicController.getArtistMusicperPlaylist);
 
 
 // for create playlist :- Artist only add image upload ka option add karna
@@ -61,8 +63,8 @@ router.post('/createUserPlaylist',authMiddlware.authUserMiddleware,musicControll
 router.get('/userPlaylists',authMiddlware.authUserMiddleware,musicController.getUserPlaylists);
 router.get('/playlist/user/:id',authMiddlware.authUserMiddleware,musicController.getSpecificUserPlaylists);
 
-
-router.get('/mood-dectect/:mood',authMiddlware.authUserMiddleware, musicController.getMusicByMood);
+// New
+router.get('/mood-dectect',authMiddlware.authUserMiddleware, musicController.getMusicByMood);
 
 router.get('/all/likedSongs',authMiddlware.authUserMiddleware,musicController.getAllLikedSongs);
 router.post('/likeSong/:id',authMiddlware.authUserMiddleware,musicController.likeSong);
