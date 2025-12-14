@@ -1,24 +1,34 @@
-# Stage 1: Build the Vite React app
-FROM node:20-alpine AS builder
+# ---------- Build stage ----------
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-# Install dependencies
+# install deps first (better cache)
 COPY package*.json ./
-RUN npm install
+RUN npm ci
 
-# Copy source and build
+# copy source
 COPY . .
+
+# build args (API URL)
+ARG VITE_API_AUTH_URL
+ENV VITE_API_AUTH_URL=$VITE_API_AUTH_URL
+
+# build react
 RUN npm run build
 
-# Stage 2: Serve with nginx
+
+# ---------- Production stage ----------
 FROM nginx:alpine
 
-# Copy built assets from builder
-COPY --from=builder /app/dist /usr/share/nginx/html
+# remove default nginx config
+RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy custom nginx config (optional, uses default if not present)
-# COPY nginx.conf /etc/nginx/conf.d/default.conf
+# custom nginx config
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+# copy build files
+COPY --from=build /app/dist /usr/share/nginx/html
 
 EXPOSE 80
 

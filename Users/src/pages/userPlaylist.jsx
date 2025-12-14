@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaPlay, FaArrowLeft, FaMusic, FaHeart, FaEllipsisH, FaClock, FaRandom } from 'react-icons/fa';
 import { useMusicPlayer } from '../contexts/MusicContext';
+import { MUSIC_API } from '../config/api';
 
 const UserPlaylist = () => {
   const { id } = useParams();
@@ -20,7 +21,7 @@ const UserPlaylist = () => {
     const fetchPlaylist = async () => {
       try {
         setLoading(true);
-        const res = await axios.get(`http://localhost:3001/api/music/playlist/user/${id}`, {
+        const res = await axios.get(`${MUSIC_API}/playlist/user/${id}`, {
           withCredentials: true,
         });
         

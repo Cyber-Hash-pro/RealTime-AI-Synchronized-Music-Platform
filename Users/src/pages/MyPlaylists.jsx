@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaMusic, FaPlay, FaPlus } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { MUSIC_API } from '../config/api';
 
 const MyPlaylists = () => {
   const navigate = useNavigate();
@@ -16,7 +17,7 @@ const MyPlaylists = () => {
     const fetchPlaylists = async () => {
       try {
         const { data } = await axios.get(
-          "http://localhost:3001/api/music/userPlaylists",
+          `${MUSIC_API}/userPlaylists`,
           { withCredentials: true }
         );
 

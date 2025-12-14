@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { FaPlay, FaMusic } from 'react-icons/fa';
 import axios from 'axios';
 import { useMusicPlayer } from '../contexts/MusicContext';
+import { MUSIC_API } from '../config/api';
 
 const Search = () => {
   const [searchParams] = useSearchParams();
@@ -23,7 +24,7 @@ const Search = () => {
   const searchMusic = async (searchQuery) => {
     try {
       setLoading(true);
-      const { data } = await axios.get(`http://localhost:3001/api/music/search/${encodeURIComponent(searchQuery)}`, {
+      const { data } = await axios.get(`${MUSIC_API}/search/${encodeURIComponent(searchQuery)}`, {
         withCredentials: true
       });
       setSearchResults(data.musics || []);

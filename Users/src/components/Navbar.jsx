@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { logoutUser } from '../Store/actions/userAction';
 import socketInstance from '../socket.service.js';
 import axios from 'axios';
+import { MUSIC_API } from '../config/api';
 
 const Navbar = ({ onMenuClick }) => {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -47,7 +48,7 @@ const Navbar = ({ onMenuClick }) => {
 
     try {
       setIsSearching(true);
-      const { data } = await axios.get(`http://localhost:3001/api/music/search/${encodeURIComponent(query)}`, {
+      const { data } = await axios.get(`${MUSIC_API}/search/${encodeURIComponent(query)}`, {
         withCredentials: true
       });
       setSearchResults(data.musics || []);

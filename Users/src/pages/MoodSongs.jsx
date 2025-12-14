@@ -2,15 +2,20 @@ import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FaArrowLeft, FaPlay, FaPause, FaHeart, FaRandom, FaMusic } from 'react-icons/fa';
 import axios from 'axios';
+import { useMusicPlayer } from '../contexts/MusicContext';
+import { MUSIC_API } from '../config/api';
 
 const MoodSongs = () => {
   const { mood } = useParams();
   const navigate = useNavigate();
+  const { playSong, currentSong, isPlaying, togglePlayPause } = useMusicPlayer();
   
   const [songs, setSongs] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState(null);
-  const [playingId, setPlayingId] = useState(null);
+  const [limit, setLimit] = useState(10);
+  const [hasMore, setHasMore] = useState(true);
 
   const moodEmojis = {
     happy: '😊',
@@ -42,108 +47,65 @@ const MoodSongs = () => {
     neutral: 'Balanced mixes for a chill state of mind.'
   };
 
-  // Dummy songs for fallback (when API doesn't return data)
-  const dummySongs = {
-    happy: [
-      { _id: '1', title: 'Walking on Sunshine', artist: 'Katrina & The Waves', duration: '3:54', cover: null },
-      { _id: '2', title: 'Happy', artist: 'Pharrell Williams', duration: '3:53', cover: null },
-      { _id: '3', title: 'Good as Hell', artist: 'Lizzo', duration: '2:39', cover: null },
-      { _id: '4', title: 'Uptown Funk', artist: 'Bruno Mars', duration: '4:30', cover: null },
-      { _id: '5', title: 'Can\'t Stop the Feeling', artist: 'Justin Timberlake', duration: '3:56', cover: null },
-      { _id: '6', title: 'Shake It Off', artist: 'Taylor Swift', duration: '3:39', cover: null },
-    ],
-    sad: [
-      { _id: '1', title: 'Someone Like You', artist: 'Adele', duration: '4:45', cover: null },
-      { _id: '2', title: 'Fix You', artist: 'Coldplay', duration: '4:54', cover: null },
-      { _id: '3', title: 'Hurt', artist: 'Johnny Cash', duration: '3:38', cover: null },
-      { _id: '4', title: 'The Night We Met', artist: 'Lord Huron', duration: '3:28', cover: null },
-      { _id: '5', title: 'Skinny Love', artist: 'Bon Iver', duration: '3:58', cover: null },
-      { _id: '6', title: 'Mad World', artist: 'Gary Jules', duration: '3:07', cover: null },
-    ],
-    angry: [
-      { _id: '1', title: 'Killing In The Name', artist: 'Rage Against the Machine', duration: '5:13', cover: null },
-      { _id: '2', title: 'Break Stuff', artist: 'Limp Bizkit', duration: '2:46', cover: null },
-      { _id: '3', title: 'Bodies', artist: 'Drowning Pool', duration: '3:24', cover: null },
-      { _id: '4', title: 'Chop Suey!', artist: 'System of a Down', duration: '3:30', cover: null },
-      { _id: '5', title: 'Given Up', artist: 'Linkin Park', duration: '3:09', cover: null },
-      { _id: '6', title: 'Bulls on Parade', artist: 'RATM', duration: '3:52', cover: null },
-    ],
-    fearful: [
-      { _id: '1', title: 'Breathe Me', artist: 'Sia', duration: '4:34', cover: null },
-      { _id: '2', title: 'Weightless', artist: 'Marconi Union', duration: '8:09', cover: null },
-      { _id: '3', title: 'Clair de Lune', artist: 'Debussy', duration: '5:12', cover: null },
-      { _id: '4', title: 'River Flows in You', artist: 'Yiruma', duration: '3:35', cover: null },
-      { _id: '5', title: 'Sunset Lover', artist: 'Petit Biscuit', duration: '3:25', cover: null },
-      { _id: '6', title: 'Safe and Sound', artist: 'Capital Cities', duration: '3:14', cover: null },
-    ],
-    disgusted: [
-      { _id: '1', title: 'Good Vibrations', artist: 'Beach Boys', duration: '3:39', cover: null },
-      { _id: '2', title: 'Three Little Birds', artist: 'Bob Marley', duration: '3:00', cover: null },
-      { _id: '3', title: 'Here Comes the Sun', artist: 'The Beatles', duration: '3:05', cover: null },
-      { _id: '4', title: 'Island in the Sun', artist: 'Weezer', duration: '3:20', cover: null },
-      { _id: '5', title: 'Lovely Day', artist: 'Bill Withers', duration: '4:15', cover: null },
-      { _id: '6', title: 'Don\'t Worry Be Happy', artist: 'Bobby McFerrin', duration: '4:50', cover: null },
-    ],
-    surprised: [
-      { _id: '1', title: 'Wow.', artist: 'Post Malone', duration: '2:29', cover: null },
-      { _id: '2', title: 'Thunder', artist: 'Imagine Dragons', duration: '3:07', cover: null },
-      { _id: '3', title: 'Bohemian Rhapsody', artist: 'Queen', duration: '5:55', cover: null },
-      { _id: '4', title: 'Crazy', artist: 'Gnarls Barkley', duration: '2:58', cover: null },
-      { _id: '5', title: 'Take On Me', artist: 'a-ha', duration: '3:46', cover: null },
-      { _id: '6', title: 'Somebody That I Used to Know', artist: 'Gotye', duration: '4:04', cover: null },
-    ],
-    neutral: [
-      { _id: '1', title: 'Blinding Lights', artist: 'The Weeknd', duration: '3:20', cover: null },
-      { _id: '2', title: 'Levitating', artist: 'Dua Lipa', duration: '3:23', cover: null },
-      { _id: '3', title: 'Stay', artist: 'The Kid LAROI & Justin Bieber', duration: '2:21', cover: null },
-      { _id: '4', title: 'Watermelon Sugar', artist: 'Harry Styles', duration: '2:54', cover: null },
-      { _id: '5', title: 'drivers license', artist: 'Olivia Rodrigo', duration: '4:02', cover: null },
-      { _id: '6', title: 'Peaches', artist: 'Justin Bieber', duration: '3:18', cover: null },
-    ]
-  };
-
   useEffect(() => {
     const fetchMoodSongs = async () => {
       try {
         setLoading(true);
-        const token = localStorage.getItem('token');
-        const response = await axios.get(`http://localhost:3001/api/music/mood-dectect/?mood=${mood}&limit=${10}`, {
-        withCredentials: true,
+        const response = await axios.get(`${MUSIC_API}/mood-dectect/?mood=${mood}&limit=${limit}`, {
+          withCredentials: true,
         });
         console.log('Mood Songs Response:', response.data);
-        if (response.data && response.data.length > 0) {
-          setSongs(response.data);
+        
+        // Check if response has musics array
+        if (response.data && response.data.musics && response.data.musics.length > 0) {
+          setSongs(response.data.musics);
+          // Check if there might be more songs
+          setHasMore(response.data.musics.length === limit);
         } else {
-          // Use dummy songs if API returns empty
-          setSongs(dummySongs[mood] || dummySongs.neutral);
+          // No songs available
+          setSongs([]);
+          setHasMore(false);
         }
       } catch (err) {
         console.error('Error fetching mood songs:', err);
-        // Use dummy songs on error
-        setSongs(dummySongs[mood] || dummySongs.neutral);
+        setError('Unable to load songs.');
+        setSongs([]);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMoodSongs();
-  }, [mood]);
+  }, [mood, limit]);
 
-  const handlePlaySong = (songId) => {
-    if (playingId === songId) {
-      setPlayingId(null);
+
+  const handleLoadMore = () => {
+    setLimit(prevLimit => prevLimit + 10);
+  };
+
+  const handlePlaySong = (song) => {
+    // If clicking the same song that's playing, toggle play/pause
+    if (currentSong?._id === song._id) {
+      togglePlayPause();
     } else {
-      setPlayingId(songId);
-      // Navigate to song details if it's a real song
-      if (songs[0]?.musicUrl) {
-        navigate(`/song/${songId}`);
-      }
+      // Play new song
+      playSong(song);
+    }
+  };
+
+  const handlePlayAll = () => {
+    if (songs.length > 0) {
+      playSong(songs[0]);
     }
   };
 
   const handleShuffle = () => {
     const shuffled = [...songs].sort(() => Math.random() - 0.5);
     setSongs(shuffled);
+    if (shuffled.length > 0) {
+      playSong(shuffled[0]);
+    }
   };
 
   return (
@@ -185,10 +147,14 @@ const MoodSongs = () => {
         {/* Action Buttons */}
         <div className="flex items-center gap-4 mb-8">
           <button
-            onClick={() => songs.length > 0 && handlePlaySong(songs[0]._id)}
+            onClick={handlePlayAll}
             className="w-14 h-14 rounded-full bg-[#1db954] flex items-center justify-center hover:scale-105 transition-transform shadow-lg shadow-[#1db954]/30"
           >
-            <FaPlay className="text-black text-xl ml-1" />
+            {currentSong && songs[0]?._id === currentSong._id && isPlaying ? (
+              <FaPause className="text-black text-xl" />
+            ) : (
+              <FaPlay className="text-black text-xl ml-1" />
+            )}
           </button>
           <button
             onClick={handleShuffle}
@@ -216,38 +182,53 @@ const MoodSongs = () => {
         {/* Songs Grid */}
         {!loading && songs.length > 0 && (
           <div className="space-y-2">
-            {songs.map((song, index) => (
-              <div
-                key={song._id}
-                onClick={() => handlePlaySong(song._id)}
-                className={`group flex items-center gap-4 p-3 rounded-lg hover:bg-[#282828] transition-colors cursor-pointer ${
-                  playingId === song._id ? 'bg-[#282828]' : ''
-                }`}
-              >
-                {/* Track Number / Play Icon */}
-                <div className="w-8 text-center">
-                  <span className={`text-[#b3b3b3] group-hover:hidden ${playingId === song._id ? 'hidden' : ''}`}>
-                    {index + 1}
-                  </span>
-                  <FaPlay className={`text-white text-sm mx-auto hidden group-hover:block ${playingId === song._id ? '!block' : ''}`} />
-                </div>
+            {songs.map((song, index) => {
+              const isCurrentSong = currentSong?._id === song._id;
+              const isCurrentPlaying = isCurrentSong && isPlaying;
+              
+              return (
+                <div
+                  key={song._id}
+                  onClick={() => handlePlaySong(song)}
+                  className={`group flex items-center gap-4 p-3 rounded-lg hover:bg-[#282828] transition-colors cursor-pointer ${
+                    isCurrentSong ? 'bg-[#282828]' : ''
+                  }`}
+                >
+                  {/* Track Number / Play Icon */}
+                  <div className="w-8 text-center">
+                    {isCurrentPlaying ? (
+                      <FaPause className="text-[#1db954] text-sm mx-auto" />
+                    ) : (
+                      <>
+                        <span className={`text-[#b3b3b3] group-hover:hidden ${isCurrentSong ? 'hidden' : ''}`}>
+                          {index + 1}
+                        </span>
+                        <FaPlay className={`text-white text-sm mx-auto hidden group-hover:block ${isCurrentSong ? '!block !text-[#1db954]' : ''}`} />
+                      </>
+                    )}
+                  </div>
 
                 {/* Album Art */}
-                <div className={`w-12 h-12 rounded bg-gradient-to-br ${moodColors[mood]} flex items-center justify-center flex-shrink-0`}>
-                  {song.cover ? (
+                <div className="w-12 h-12 rounded overflow-hidden bg-[#282828] flex items-center justify-center flex-shrink-0">
+                  {song.coverUrl ? (
                     <img 
-                      src={song.cover} 
+                      src={song.coverUrl} 
                       alt={song.title} 
-                      className="w-full h-full object-cover rounded"
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                        e.target.nextElementSibling.style.display = 'flex';
+                      }}
                     />
-                  ) : (
+                  ) : null}
+                  <div className={`w-full h-full bg-gradient-to-br ${moodColors[mood]} items-center justify-center ${song.coverUrl ? 'hidden' : 'flex'}`}>
                     <FaMusic className="text-white/80" />
-                  )}
+                  </div>
                 </div>
 
                 {/* Song Info */}
                 <div className="flex-1 min-w-0">
-                  <h3 className={`font-medium truncate ${playingId === song._id ? 'text-[#1db954]' : 'text-white'}`}>
+                  <h3 className={`font-medium truncate ${isCurrentSong ? 'text-[#1db954]' : 'text-white'}`}>
                     {song.title}
                   </h3>
                   <p className="text-[#b3b3b3] text-sm truncate">
@@ -268,35 +249,55 @@ const MoodSongs = () => {
                   <FaHeart />
                 </button>
               </div>
-            ))}
+            );
+            })}
           </div>
         )}
 
         {/* Empty State */}
         {!loading && songs.length === 0 && (
           <div className="text-center py-20">
-            <div className="text-6xl mb-4">🎵</div>
-            <h3 className="text-white text-xl font-semibold mb-2">No songs found</h3>
-            <p className="text-[#b3b3b3]">We couldn't find songs for this mood yet.</p>
+            <div className={`w-24 h-24 mx-auto mb-6 rounded-full bg-gradient-to-br ${moodColors[mood]} flex items-center justify-center`}>
+              <div className="text-5xl">🎵</div>
+            </div>
+            <h3 className="text-white text-2xl font-bold mb-3">Coming Soon!</h3>
+            <p className="text-[#b3b3b3] text-lg mb-2">
+              Songs for {mood} mood are being uploaded
+            </p>
+            <p className="text-[#b3b3b3] mb-6">
+              Check back soon for curated tracks matching your vibe
+            </p>
             <button
               onClick={() => navigate('/mood-detector')}
-              className="mt-6 bg-[#1db954] text-black font-bold px-6 py-3 rounded-full hover:scale-105 transition-transform"
+              className="bg-[#1db954] text-black font-bold px-8 py-3 rounded-full hover:scale-105 transition-transform inline-flex items-center gap-2"
             >
+              <FaArrowLeft />
               Try Another Mood
             </button>
           </div>
         )}
 
-        {/* Detect Again Section */}
-        <div className="mt-12 mb-8 p-6 bg-[#181818] rounded-2xl text-center">
-          <p className="text-[#b3b3b3] mb-4">Want to try detecting your mood again?</p>
-          <button
-            onClick={() => navigate('/mood-detector')}
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white font-bold px-8 py-3 rounded-full hover:scale-105 transition-transform"
-          >
-            🎭 Detect Mood Again
-          </button>
-        </div>
+        {/* Load More Button */}
+        {!loading && songs.length > 0 && hasMore && (
+          <div className="flex justify-center mt-8 mb-6">
+            <button
+              onClick={handleLoadMore}
+              disabled={loadingMore}
+              className="bg-[#282828] text-white font-semibold px-8 py-3 rounded-full hover:bg-[#3e3e3e] transition-all hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-2"
+            >
+              {loadingMore ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Loading...
+                </>
+              ) : (
+                'Load More Songs'
+              )}
+            </button>
+          </div>
+        )}
+
+        
       </div>
     </div>
   );

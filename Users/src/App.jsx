@@ -19,7 +19,8 @@ import UserPlaylist from './pages/userPlaylist';
 import axios from 'axios';
 import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
-import { authenticateUser } from './Store/actions/userAction.jsx';                   
+import { authenticateUser } from './Store/actions/userAction.jsx';
+import { AUTH_API } from './config/api';                   
 
 
 // ✔ ProtectedRoute Component Inside Same File
@@ -28,7 +29,7 @@ const ProtectedRoute = ({ children }) => {
   const dispatch = useDispatch();
 
   useEffect(() => {
-    axios.get('http://localhost:3000/api/auth/user/me', {
+    axios.get(`${AUTH_API}/user/me`, {
       withCredentials: true
     })
       .then(() => setIsAuth(true))

@@ -45,7 +45,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         fixed lg:static
         w-[250px] min-w-[250px] shrink-0 
         bg-black h-screen flex flex-col 
-        overflow-y-auto z-50
+        overflow-y-auto z-150
         transition-transform duration-300 ease-in-out
         border-r border-[#282828]
         ${isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}

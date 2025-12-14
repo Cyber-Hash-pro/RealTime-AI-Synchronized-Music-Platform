@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { MUSIC_API } from '../config/api';
 
 const CreatePlaylist = () => {
   const navigate = useNavigate();
@@ -20,7 +21,7 @@ const CreatePlaylist = () => {
       try {
         const token = localStorage.getItem("token");
 
-        const { data } = await axios.get("http://localhost:3001/api/music", 
+        const { data } = await axios.get(`${MUSIC_API}`, 
           {withCredentials:true}
         );
         
@@ -67,7 +68,7 @@ const CreatePlaylist = () => {
       console.log("Sending to API:", body);
 
       const res = await axios.post(
-        "http://localhost:3001/api/music/createUserPlaylist",
+        `${MUSIC_API}/createUserPlaylist`,
         body,
         
         {withCredentials:true}

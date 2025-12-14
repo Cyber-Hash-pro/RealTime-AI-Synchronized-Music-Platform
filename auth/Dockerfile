@@ -12,7 +12,7 @@ COPY . .
 
 
 # Default environment
-ENV NODE_ENV=production
+
 ENV PORT=3000
 
 # Expose port (override using --env or env file)

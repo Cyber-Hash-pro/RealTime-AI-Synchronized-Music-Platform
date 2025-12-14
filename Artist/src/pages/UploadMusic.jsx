@@ -5,6 +5,7 @@ import Card from '../components/Card';
 import Input from '../components/Input';
 import Button from '../components/Button';
 import axios from 'axios';
+import { MUSIC_API } from '../config/api';
 
 const MOOD_OPTIONS = ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'neutral'];
 
@@ -137,7 +138,7 @@ const UploadMusic = () => {
         }, 300);
 
         const res = await axios.post(
-          "http://localhost:3001/api/music/upload",
+          `${MUSIC_API}/upload`,
           data,
           {
             withCredentials: true,
@@ -169,7 +170,7 @@ const UploadMusic = () => {
         setUploadProgress(20);
 
         const res = await axios.post(
-          "http://localhost:3001/api/music/upload",
+          `${MUSIC_API}/upload`,
           data,
           {
             withCredentials: true,

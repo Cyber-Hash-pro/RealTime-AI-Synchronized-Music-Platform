@@ -84,7 +84,7 @@ const Home = () => {
       )}
 
       {/* Floating Action Button */}
-      <div className="fixed bottom-24 right-6 z-50">
+      <div className="fixed bottom-35 right-5 z-50">
         {/* Background Blur when open */}
         {fabOpen && (
           <div 

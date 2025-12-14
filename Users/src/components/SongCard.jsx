@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { FaPlay, FaHeart } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { MUSIC_API } from '../config/api';
 
 const SongCard = ({ song }) => {
   const navigate = useNavigate();
@@ -14,7 +15,7 @@ const SongCard = ({ song }) => {
     
     try {
       setIsLiking(true);
-      await axios.post(`http://localhost:3001/api/music/likeSong/${song._id}`, {}, {
+      await axios.post(`${MUSIC_API}/likeSong/${song._id}`, {}, {
         withCredentials: true
       });
       setIsLiked(true);

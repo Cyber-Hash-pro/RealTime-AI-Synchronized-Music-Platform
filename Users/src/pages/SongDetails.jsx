@@ -14,6 +14,7 @@ import {
 } from '../components/SongDetails';
 import socketInstance from '../socket.service.js';
 import axios from 'axios';
+import { MUSIC_API } from '../config/api';
 
 
 const SongDetails = () => {
@@ -50,7 +51,7 @@ const SongDetails = () => {
   // Check if song is already liked
   const checkIfLiked = useCallback(async () => {
     try {
-      const { data } = await axios.get('http://localhost:3001/api/music/all/likedSongs', {
+      const { data } = await axios.get(`${MUSIC_API}/all/likedSongs`, {
         withCredentials: true
       });
       const likedSongIds = data.likedSongs?.map(item => item.songId?._id) || [];
@@ -135,7 +136,7 @@ const SongDetails = () => {
         // TODO: Add unlike API when available
         setIsLiked(false);
       } else {
-        await axios.post(`http://localhost:3001/api/music/likeSong/${id}`, {}, {
+        await axios.post(`${MUSIC_API}/likeSong/${id}`, {}, {
           withCredentials: true
         });
         setIsLiked(true);

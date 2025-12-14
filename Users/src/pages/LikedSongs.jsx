@@ -3,6 +3,7 @@ import { FaHeart, FaPlay, FaMusic } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useMusicPlayer } from '../contexts/MusicContext';
+import { MUSIC_API } from '../config/api';
 
 const LikedSongs = () => {
   const navigate = useNavigate();
@@ -19,7 +20,7 @@ const LikedSongs = () => {
   const fetchLikedSongs = async () => {
     try {
       setLoading(true);
-      const { data } = await axios.get('http://localhost:3001/api/music/all/likedSongs', {
+      const { data } = await axios.get(`${MUSIC_API}/all/likedSongs`, {
         withCredentials: true
       });
       

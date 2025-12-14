@@ -7,14 +7,13 @@ import {
   createPlaylistSuccess,
   createPlaylistFailure,
 } from '../slices/musicslice.jsx';
-
-const API_BASE_URL = 'http://localhost:3001/api/music';
+import { MUSIC_API } from '../../config/api';
 
 // Fetch artist tracks
 export const fetchArtistTracks = () => async (dispatch) => {
   dispatch(fetchArtistTracksStart());
   try {
-    const res = await axios.get(`${API_BASE_URL}/artist-music`, {
+    const res = await axios.get(`${MUSIC_API}/artist-music`, {
       withCredentials: true,
     });
     dispatch(fetchArtistTracksSuccess(res.data.musics || []));
@@ -32,7 +31,7 @@ export const fetchArtistTracks = () => async (dispatch) => {
 export const fetchArtistPlaylists = () => async (dispatch) => {
   dispatch(fetchArtistTracksStart()); // Reuse loading state
   try {
-    const res = await axios.get('http://localhost:3001/api/music/artist/playlist', { withCredentials: true });
+    const res = await axios.get(`${MUSIC_API}/artist/playlist`, { withCredentials: true });
     dispatch(fetchArtistTracksSuccess(res.data.playlists || []));
   } catch (error) {
     dispatch(fetchArtistTracksFailure(error.response?.data?.message || 'Error fetching playlists'));
@@ -43,7 +42,7 @@ export const fetchArtistPlaylists = () => async (dispatch) => {
 export const fetchPlaylistDetails = (id) => async (dispatch) => {
   dispatch(fetchArtistTracksStart()); // Reuse loading state
   try {
-    const res = await axios.get(`http://localhost:3001/api/music/artist/playlist/${id}`, { withCredentials: true });
+    const res = await axios.get(`${MUSIC_API}/artist/playlist/${id}`, { withCredentials: true });
     dispatch({ type: 'music/setPlaylistDetails', payload: res.data.playlist });
   } catch (error) {
     dispatch(fetchArtistTracksFailure(error.response?.data?.message || 'Error fetching playlist details'));
