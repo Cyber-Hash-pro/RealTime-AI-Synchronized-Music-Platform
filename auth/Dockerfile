@@ -5,7 +5,7 @@ WORKDIR /usr/src/app
 
 # Install dependencies (use npm install to be safe if no lockfile)
 COPY package*.json ./
-RUN npm install --production --silent
+RUN npm install 
 
 # Copy app source
 COPY . .
