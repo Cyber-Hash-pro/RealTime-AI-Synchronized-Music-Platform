@@ -1,7 +1,6 @@
 import axios from 'axios';
 import { setLoading, setUser, setError, logout, clearError } from '../slices/userSlice.jsx';
-
-const API_URL = 'http://localhost:3000/api/auth';
+import { AUTH_API } from '../../config/api';
 
 // Re-export clearError for use in components
 export { clearError };
@@ -11,7 +10,7 @@ export const loginUser = (credentials) => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     
-    const response = await axios.post(`${API_URL}/login`, credentials, {
+    const response = await axios.post(`${AUTH_API}/login`, credentials, {
       withCredentials: true,
     });
     
@@ -42,7 +41,7 @@ export const registerUser = (userData) => async (dispatch) => {
       },
     };
     
-    const response = await axios.post(`${API_URL}/register`, payload, {
+    const response = await axios.post(`${AUTH_API}/register`, payload, {
       withCredentials: true,
       headers: { 'Content-Type': 'application/json' },
     });
@@ -61,7 +60,7 @@ export const registerUser = (userData) => async (dispatch) => {
 
 // Google Auth - redirect to Google OAuth
 export const googleAuth = () => {
-  window.location.href = `${API_URL}/google`;
+  window.location.href = `${AUTH_API}/google`;
 };
 
 
@@ -70,7 +69,7 @@ export const googleAuth = () => {
 export const logoutUser = () => async (dispatch) => {
   try {
     // Call backend logout endpoint to clear token cookie
-    await axios.get(`${API_URL}/logout`, {
+    await axios.get(`${AUTH_API}/logout`, {
       withCredentials: true,
     });
     
@@ -93,7 +92,7 @@ export const authenticateUser = () => async (dispatch) => {
   try {
     dispatch(setLoading(true));
     
-    const response = await axios.get(`${API_URL}/user/me`, {
+    const response = await axios.get(`${AUTH_API}/user/me`, {
       withCredentials: true,
     });
     

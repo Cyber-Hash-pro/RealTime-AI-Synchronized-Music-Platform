@@ -1,21 +1,45 @@
 import axios from "axios";
-import { setCurrentMusic, setAllMusic, setArtistPlaylist } from "../slices/musicSlice.jsx";
+import { setCurrentMusic, setAllMusic, appendMusic, setHasMore, setArtistPlaylist, setLoading, setError } from "../slices/musicSlice.jsx";
+import { MUSIC_API } from '../../config/api';
 
-export const fetchMusicData = () => async (dispatch) => {
+const LIMIT = 10;
+
+export const fetchMusicData = (skip = 0, append = false) => async (dispatch) => {
     try {
-        const response = await axios.get('http://localhost:3001/api/music',{
-        withCredentials: true,
-      });
+        // Only show full loading for initial fetch
+        if (!append) {
+            dispatch(setLoading(true));
+        }
+        dispatch(setError(null));
+        
+        const response = await axios.get(`${MUSIC_API}?skip=${skip}&limit=${LIMIT}`, {
+            withCredentials: true,
+        });
+        console.log("Music Data Response:", response.data);
         const musicData = response.data.musics || [];
-        dispatch(setAllMusic(musicData));
+        
+        if (append) {
+            dispatch(appendMusic(musicData));
+        } else {
+            dispatch(setAllMusic(musicData));
+        }
+        
+        // If we received fewer items than limit, there's no more data
+        dispatch(setHasMore(musicData.length === LIMIT));
+        
+        return musicData.length; // Return count for skip calculation
 
-    }catch (error) {
+    } catch (error) {
         console.error("Error fetching music data:", error);
+        dispatch(setError("Failed to load songs"));
+        return 0;
+    } finally {
+        dispatch(setLoading(false));
     }
 }
 export const specificMusicData = (id) => async (dispatch) => {
     try{
-        const response = await axios.get(`http://localhost:3001/api/music/get-details/${id}`,{
+        const response = await axios.get(`${MUSIC_API}/get-details/${id}`,{
             withCredentials: true,
         });
         const currentMusic = response.data.music || response.data;
@@ -28,7 +52,7 @@ export const specificMusicData = (id) => async (dispatch) => {
 
 export const artistPlaylistFetch = () => async (dispatch) => {
     try {
-       const response = await axios.get('http://localhost:3001/api/music/allPlaylist',{
+       const response = await axios.get(`${MUSIC_API}/allPlaylist`,{
         withCredentials: true,
        });
        console.log("Playlist Data Response:", response.data);   
@@ -42,7 +66,7 @@ export const artistPlaylistFetch = () => async (dispatch) => {
 export const fetchSinglePlaylist = async (id) => {
     try {
         // Fetch playlist
-        const response = await axios.get(`http://localhost:3001/api/music/playlist/${id}`, {
+        const response = await axios.get(`${MUSIC_API}/playlist/${id}`, {
             withCredentials: true,
         });
         const playlist = response.data.playlist || response.data;
@@ -51,7 +75,7 @@ export const fetchSinglePlaylist = async (id) => {
         if (playlist.musics && playlist.musics.length > 0) {
             const songPromises = playlist.musics.map(async (musicId) => {
                 try {
-                    const songRes = await axios.get(`http://localhost:3001/api/music/get-details/${musicId}`, {
+                    const songRes = await axios.get(`${MUSIC_API}/get-details/${musicId}`, {
                         withCredentials: true,
                     });
                     return songRes.data.music || songRes.data;

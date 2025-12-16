@@ -1,6 +1,8 @@
 import { io } from 'socket.io-client';
 
-const socketInstance = io('http://localhost:3001', {
+const SOCKET_URL = import.meta.env.VITE_MUSIC_API_URL || 'http://localhost:3001';
+
+const socketInstance = io(SOCKET_URL, {
     withCredentials: true,
     autoConnect: false, // Don't connect automatically
     reconnection: true,

@@ -9,12 +9,18 @@ import { FaPlus, FaTimes, FaSmile, FaMusic, FaHeart, FaBroadcastTower } from 're
 const Home = () => {
 
   const dispatch = useDispatch();
-  const { allMusic, loading, error } = useSelector((state) => state.music);
+  const { allMusic, loading, error, hasMore } = useSelector((state) => state.music);
   const navigate = useNavigate();
   const [fabOpen, setFabOpen] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [currentSkip, setCurrentSkip] = useState(0);
+  const LIMIT = 10;
   
   useEffect(() => {
-    dispatch(fetchMusicData());
+    // Reset and fetch fresh data when component mounts
+    setCurrentSkip(0);
+    dispatch(fetchMusicData(0, false));
+    
     socketInstance.on('connect', () => {
         console.log('Connected to socket server');
     });
@@ -22,9 +28,7 @@ const Home = () => {
       console.log('Play event received with data:', data);
       const musicId = data.musicId; 
     
-      navigate(`/song/${musicId}`
-        
-      );
+      navigate(`/song/${musicId}`);
     });
    
     return () => {
@@ -38,7 +42,16 @@ const Home = () => {
     navigate('/mood-detector');
   };
 
-  if (loading) {
+  const handleLoadMore = async () => {
+    const newSkip = currentSkip + LIMIT;
+    setLoadingMore(true);
+    await dispatch(fetchMusicData(newSkip, true));
+    setCurrentSkip(newSkip);
+    setLoadingMore(false);
+  };
+
+  // Only show full loading screen on initial load when no songs exist
+  if (loading && allMusic.length === 0) {
     return (
       <div className="px-4 py-6 sm:p-6">
         <h1 className="text-4xl font-bold text-white mb-8">All Songs</h1>
@@ -57,7 +70,10 @@ const Home = () => {
         <div className="flex flex-col justify-center items-center h-64">
           <div className="text-red-400 text-lg mb-4">{error}</div>
           <button
-            onClick={() => dispatch(fetchMusicData())}
+            onClick={() => {
+              setCurrentSkip(0);
+              dispatch(fetchMusicData(0, false));
+            }}
             className="bg-[#1db954] text-black px-6 py-2 rounded-full hover:bg-[#1ed760] transition-colors"
           >
             Retry
@@ -76,11 +92,33 @@ const Home = () => {
           No songs available
         </div>
       ) : (
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6">
-          {allMusic.map((song) => (
-            <SongCard key={song._id} song={song} />
-          ))}
-        </div>
+        <>
+          <div className="grid grid-cols-[repeat(auto-fill,minmax(180px,1fr))] gap-6">
+            {allMusic.map((song) => (
+              <SongCard key={song._id} song={song} />
+            ))}
+          </div>
+          
+          {/* Load More Button */}
+          {hasMore && (
+            <div className="flex justify-center mt-8">
+              <button
+                onClick={handleLoadMore}
+                disabled={loadingMore}
+                className="bg-[#282828] text-white px-8 py-3 rounded-full font-medium hover:bg-[#3e3e3e] transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {loadingMore ? (
+                  <>
+                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  'Load More Songs'
+                )}
+              </button>
+            </div>
+          )}
+        </>
       )}
 
       {/* Floating Action Button */}

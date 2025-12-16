@@ -13,6 +13,7 @@ const AllSongsSection = ({
         <FaMusic className="text-[#1db954]" />
         All Songs ({allMusic?.length || 0})
       </h2>
+      <div>Search song </div>
       <div className="space-y-2 max-h-[400px] overflow-y-auto">
         {allMusic === undefined || allMusic === null ? (
           <div className="flex items-center justify-center py-8">
