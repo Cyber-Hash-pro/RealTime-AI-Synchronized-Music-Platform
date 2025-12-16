@@ -152,6 +152,13 @@ export const MusicProvider = ({ children }) => {
     
     const audio = audioRef.current;
     
+    // Stop any current playback completely
+    audio.pause();
+    audio.currentTime = 0;
+    
+    // Set new source manually (not through React's src attribute)
+    audio.src = currentSong.musicUrl;
+    
     const handleCanPlay = () => {
       if (isPlayingRef.current) {
         audio.play().catch(console.error);
@@ -221,16 +228,15 @@ export const MusicProvider = ({ children }) => {
   return (
     <MusicContext.Provider value={value}>
       {children}
-      {/* Global Audio Element */}
+      {/* Global Audio Element - src is managed manually in useEffect to prevent echo */}
       <audio
         ref={audioRef}
-        src={currentSong?.musicUrl || null}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={handleLoadedMetadata}
         onEnded={handleEnded}
         onPlay={handlePlay}
         onPause={handlePause}
-        preload="metadata"
+        preload="auto"
       />
     </MusicContext.Provider>
   );
