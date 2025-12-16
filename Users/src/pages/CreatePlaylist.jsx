@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { MUSIC_API } from '../config/api';
+import { FaSearch, FaTimes, FaPlus } from 'react-icons/fa';
 
 const CreatePlaylist = () => {
   const navigate = useNavigate();
@@ -12,6 +13,10 @@ const CreatePlaylist = () => {
   });
 
   const [allMusic, setAllMusic] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [searchResults, setSearchResults] = useState([]);
+  const [isSearching, setIsSearching] = useState(false);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // ------------------------------------------------------
   // GET all music for user (User token required)
@@ -34,6 +39,55 @@ const CreatePlaylist = () => {
 
     fetchMusic();
   }, []);
+
+  // ------------------------------------------------------
+  // SEARCH songs API
+  // ------------------------------------------------------
+  const handleSearch = async (query) => {
+    setSearchQuery(query);
+    
+    if (!query.trim()) {
+      setSearchResults([]);
+      setShowSearchResults(false);
+      return;
+    }
+
+    try {
+      setIsSearching(true);
+      setShowSearchResults(true);
+      const { data } = await axios.get(`${MUSIC_API}/search/${encodeURIComponent(query)}`, {
+        withCredentials: true
+      });
+      setSearchResults(data.musics || []);
+    } catch (error) {
+      console.error("Search error:", error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  };
+
+  const addSongToPlaylist = (song) => {
+    if (!formData.musics.includes(song._id)) {
+      setFormData({ ...formData, musics: [...formData.musics, song._id] });
+      // Also add to allMusic if not present (for display in selected list)
+      if (!allMusic.find(m => m._id === song._id)) {
+        setAllMusic([...allMusic, song]);
+      }
+    }
+    setSearchQuery("");
+    setShowSearchResults(false);
+  };
+
+  const removeSongFromPlaylist = (songId) => {
+    setFormData({ 
+      ...formData, 
+      musics: formData.musics.filter(id => id !== songId) 
+    });
+  };
+
+  // Get selected songs data
+  const selectedSongsData = allMusic.filter(music => formData.musics.includes(music._id));
 
   // ------------------------------------------------------
   // CREATE Playlist API call using AXIOS
@@ -113,62 +167,92 @@ const CreatePlaylist = () => {
           />
         </div>
 
-        {/* Music Checkbox Selection */}
+        {/* Search Songs */}
         <div>
           <label className="block text-white font-semibold mb-3">
-            Select Songs <span className="text-[#1db954]">*</span>
+            Search & Add Songs <span className="text-[#1db954]">*</span>
           </label>
 
-          <div className="bg-[#282828] rounded-lg p-4 max-h-80 overflow-y-auto">
-            {allMusic.length === 0 ? (
-              <p className="text-[#b3b3b3] text-center py-4">No songs available</p>
-            ) : (
-              <div className="space-y-4">
-                {allMusic.map((music) => (
-                  <div key={music._id} className="flex items-center space-x-4 p-3 rounded-lg hover:bg-[#383838] transition-colors">
-                    <input
-                      type="checkbox"
-                      id={music._id}
-                      checked={formData.musics.includes(music._id)}
-                      onChange={(e) => {
-                        const musicId = music._id;
-                        let updatedMusics;
-                        
-                        if (e.target.checked) {
-                          // Add to selection
-                          updatedMusics = [...formData.musics, musicId];
-                        } else {
-                          // Remove from selection
-                          updatedMusics = formData.musics.filter(id => id !== musicId);
-                        }
-                        
-                        setFormData({ ...formData, musics: updatedMusics });
-                        console.log("Selected songs:", updatedMusics);
-                      }}
-                      className="w-5 h-5 text-[#1db954] bg-[#181818] border-[#404040] rounded focus:ring-[#1db954] focus:ring-2 shrink-0"
-                    />
-                    
-                    {/* Cover Image */}
-                    <div className="w-12 h-12 shrink-0">
+          <div className="relative mb-4">
+            <div className="flex items-center bg-[#282828] rounded-lg px-4 py-3">
+              <FaSearch className="text-[#b3b3b3] mr-3" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search for songs to add..."
+                className="flex-1 bg-transparent text-white focus:outline-none placeholder-[#b3b3b3]"
+              />
+            </div>
+
+            {/* Search Results Dropdown */}
+            {showSearchResults && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-[#282828] rounded-lg shadow-lg z-10 max-h-60 overflow-y-auto">
+                {isSearching ? (
+                  <div className="p-4 text-center text-[#b3b3b3]">Searching...</div>
+                ) : searchResults.length === 0 ? (
+                  <div className="p-4 text-center text-[#b3b3b3]">No songs found</div>
+                ) : (
+                  searchResults.map((song) => (
+                    <div
+                      key={song._id}
+                      onClick={() => addSongToPlaylist(song)}
+                      className="flex items-center space-x-3 p-3 hover:bg-[#383838] cursor-pointer transition-colors"
+                    >
                       <img
-                        src={music.coverUrl || music.cover || "https://placehold.co/48x48/404040/ffffff?text=♪"}
-                        alt={music.title}
-                        className="w-full h-full object-cover rounded-md"
+                        src={song.coverUrl || song.cover || "https://placehold.co/40x40/404040/ffffff?text=♪"}
+                        alt={song.title}
+                        className="w-10 h-10 object-cover rounded"
                         onError={(e) => {
-                          e.target.src = "https://placehold.co/48x48/404040/ffffff?text=♪";
+                          e.target.src = "https://placehold.co/40x40/404040/ffffff?text=♪";
                         }}
                       />
-                    </div>
-                    
-                    <label 
-                      htmlFor={music._id} 
-                      className="flex-1 cursor-pointer"
-                    >
-                      <div className="text-white hover:text-[#1db954] transition-colors">
-                        <div className="font-medium text-sm leading-tight">{music.title}</div>
-                        <div className="text-[#b3b3b3] text-xs mt-1">{music.artist}</div>
+                      <div className="flex-1">
+                        <div className="text-white text-sm font-medium">{song.title}</div>
+                        <div className="text-[#b3b3b3] text-xs">{song.artist}</div>
                       </div>
-                    </label>
+                      {formData.musics.includes(song._id) ? (
+                        <span className="text-[#1db954] text-xs">Added</span>
+                      ) : (
+                        <FaPlus className="text-[#1db954]" />
+                      )}
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Selected Songs */}
+          <div className="bg-[#282828] rounded-lg p-4 max-h-80 overflow-y-auto">
+            <div className="text-[#b3b3b3] text-sm mb-3">
+              Selected Songs ({selectedSongsData.length})
+            </div>
+            {selectedSongsData.length === 0 ? (
+              <p className="text-[#b3b3b3] text-center py-4">No songs selected. Search and add songs above.</p>
+            ) : (
+              <div className="space-y-2">
+                {selectedSongsData.map((music) => (
+                  <div key={music._id} className="flex items-center space-x-3 p-3 rounded-lg bg-[#181818] hover:bg-[#222] transition-colors">
+                    <img
+                      src={music.coverUrl || music.cover || "https://placehold.co/40x40/404040/ffffff?text=♪"}
+                      alt={music.title}
+                      className="w-10 h-10 object-cover rounded"
+                      onError={(e) => {
+                        e.target.src = "https://placehold.co/40x40/404040/ffffff?text=♪";
+                      }}
+                    />
+                    <div className="flex-1">
+                      <div className="text-white text-sm font-medium">{music.title}</div>
+                      <div className="text-[#b3b3b3] text-xs">{music.artist}</div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeSongFromPlaylist(music._id)}
+                      className="text-red-500 hover:text-red-400 p-1"
+                    >
+                      <FaTimes />
+                    </button>
                   </div>
                 ))}
               </div>
