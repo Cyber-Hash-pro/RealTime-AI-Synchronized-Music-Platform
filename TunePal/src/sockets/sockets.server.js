@@ -34,6 +34,8 @@ const initSocketServer = (httpServer)=>{
         io.on('connection',(socket)=>{
             console.log(`User connected: ${socket.user.id}`);
 
+
+            
             socket.on('disconnect',()=>{
                 console.log(`User disconnected: ${socket.user.id}`);
             });
