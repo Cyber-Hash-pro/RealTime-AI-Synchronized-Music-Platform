@@ -20,3 +20,6 @@ const PlayPlaylistSong = tool({
     }
 
 })
+
+module.exports={CreatePlaylist, PlayPlaylistSong}
+
