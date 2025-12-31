@@ -21,3 +21,5 @@ const graph = new StateGraph(MessagesAnnotation)
 const agent = graph.compile();
 
 module.exports = agent;
+// sturce be like
+// start -> chat -> (if tool_calls) -> tools -> chat -> end

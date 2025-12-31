@@ -1,8 +1,8 @@
 // nodes.js
 const { ToolMessage, AIMessage } = require("@langchain/core/messages");
-const model = require("./model");
+const model = require("../model.js");
 
-// ---- IMPORT TOOLS ----
+
 const {
   CreatePlaylist,
   PlayPlaylistSong,
@@ -11,7 +11,7 @@ const { PlaySong } = require("../tools/playSong.tool");
 const { RecommendSong } = require("../tools/recommend.tool");
 const { SongDetails } = require("../tools/songDetails.tool");
 
-// ---- TOOL MAP ----
+// TOOL MAP 
 const tools = {
   CreatePlaylist,
   PlayPlaylistSong,
@@ -20,7 +20,7 @@ const tools = {
   SongDetails,
 };
 
-// --------------- TOOLS NODE ----------------
+// TOOLS NODE 
 const toolsNode = async (state) => {
   const lastMessage = state.messages[state.messages.length - 1];
   const toolCalls = lastMessage.tool_calls || [];
