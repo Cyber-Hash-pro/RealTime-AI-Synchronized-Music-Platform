@@ -4,6 +4,7 @@ const ConversationSchema = new mongoose.Schema({
     {
       role: String,
       message: String
+      
     }
   ]
 }, {

@@ -1,7 +1,9 @@
 const { Server } = require('socket.io');
 const cookie = require('cookie');
 const jwt = require('jsonwebtoken');
-
+require('dotenv').config();
+const Messages = require('../model/chat.model.js')
+const agent = require('../agent/agent.js');
 const initSocketServer = (httpServer)=>{
         const io = new Server(httpServer,{ 
             cors:{
@@ -33,7 +35,44 @@ const initSocketServer = (httpServer)=>{
 
         io.on('connection',(socket)=>{
             console.log(`User connected: ${socket.user.id}`);
+        // const userId = socket.user.id;
+        // const name = socket.user.name;
 
+            socket.on('ai-message',async(data)=>{
+                console.log(`Received AI message from user ${socket.user.id}:`, data);
+                    
+                // Save message to database
+                const newMessage = new Messages({
+                    userId: socket.user.id,
+                    messages: {
+                        role: 'user',
+                        message: data.message,
+                    }
+                });
+                await newMessage.save();
+
+                // Emit response back to client
+                const agentmessage  = await agent.invoke({
+                    messages:[{
+                        role :'user',
+                        content:data.message
+                    }]
+                    
+                })
+                socket.emit('ai-response', {
+                    message: agentmessage,
+                    
+                });
+                const botReply = new Messages({
+                    userId: socket.user.id,
+                    messages: {
+                        role: 'ai',
+                        message:agentmessage
+                    }
+                });
+                await botReply.save();
+
+            })
 
             
             socket.on('disconnect',()=>{
