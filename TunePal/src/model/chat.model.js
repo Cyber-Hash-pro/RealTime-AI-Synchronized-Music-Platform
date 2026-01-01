@@ -1,10 +1,12 @@
+const mongoose = require("mongoose");
+
 const ConversationSchema = new mongoose.Schema({
   userId: String,
   messages: [
     {
       role: String,
       message: String
-      
+
     }
   ]
 }, {

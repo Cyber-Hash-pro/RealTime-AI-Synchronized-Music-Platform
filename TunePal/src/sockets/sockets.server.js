@@ -16,7 +16,9 @@ const initSocketServer = (httpServer)=>{
 
         io.use((socket,next)=>{
             const cookies = cookie.parse(socket.handshake.headers.cookie || '');
+            // console.log(cookies);
             const {token } = cookies;
+            console.log(token)
              if(!token){
                 return next(new Error('Authentication error: No token provided'));
              }
@@ -34,12 +36,12 @@ const initSocketServer = (httpServer)=>{
         })
 
         io.on('connection',(socket)=>{
-            console.log(`User connected: ${socket.user.id}`);
+            // console.log(`User connected: ${socket.user.id}`);
         // const userId = socket.user.id;
         // const name = socket.user.name;
 
             socket.on('ai-message',async(data)=>{
-                console.log(`Received AI message from user ${socket.user.id}:`, data);
+                console.log(`Received AI message from user ${socket.user.id}:`, data.message);
                     
                 // Save message to database
                 const newMessage = new Messages({
@@ -59,9 +61,10 @@ const initSocketServer = (httpServer)=>{
                     }]
                     
                 })
+                console.log('Agent Message:', agentmessage);    
                 socket.emit('ai-response', {
                     message: agentmessage,
-                    
+
                 });
                 const botReply = new Messages({
                     userId: socket.user.id,

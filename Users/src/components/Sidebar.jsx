@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { FaHome, FaList, FaPlus, FaSignOutAlt, FaHeart, FaUsers, FaBroadcastTower, FaCrown } from 'react-icons/fa';
+import { FaHome, FaList, FaPlus, FaSignOutAlt, FaHeart, FaUsers, FaBroadcastTower, FaCrown, FaRobot } from 'react-icons/fa';
 import { MdLibraryMusic } from 'react-icons/md';
 import { useDispatch } from 'react-redux';
 import {logoutUser} from '../Store/actions/userAction';
@@ -12,6 +12,7 @@ const Sidebar = ({ isOpen, onClose }) => {
     { path: '/', label: 'Home', icon: <FaHome /> },
     { path: '/liked-songs', label: 'Liked Songs', icon: <FaHeart /> },
     { path: '/artist-playlists', label: 'Artist Playlists', icon: <MdLibraryMusic /> },
+    { path: '/tunepal', label: 'TunePal AI', icon: <FaRobot /> },
   ];
 
   const libraryItems = [

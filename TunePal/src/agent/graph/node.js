@@ -47,9 +47,11 @@ const toolsNode = async (state) => {
 
 // CHAT NODE 
 const chatNode = async (state) => {
+  console.log("Chat Node Invoked. Current Messages:", state.messages);
   const response = await model.invoke(state.messages, {
     tools: Object.values(tools),
   });
+  console.log("Model Response:", response);
 
   state.messages.push(
     new AIMessage({

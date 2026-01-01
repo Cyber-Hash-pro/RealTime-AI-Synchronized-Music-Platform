@@ -21,6 +21,7 @@ import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { authenticateUser } from './Store/actions/userAction.jsx';
 import { AUTH_API } from './config/api';                   
+import TunePal from './pages/TunePal.jsx';
 
 
 // ✔ ProtectedRoute Component Inside Same File
@@ -79,6 +80,7 @@ const App = () => {
             <Route path="mood-detector" element={<MoodDetector />} />
             <Route path="mood-songs/:mood" element={<MoodSongs />} />
             <Route path="search" element={<Search />} />
+            <Route path='tunepal' element={<TunePal/>} />
           </Route>
 
         </Routes>
