@@ -18,7 +18,7 @@ const tools = {
 };
 
 const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-pro",
+  model: "gemini-2.5-flash",
   apiKey: process.env.GEMINI_API_KEY,
 }).bindTools(Object.values(tools));
 
@@ -64,7 +64,7 @@ const functionCalls =
     const res = await model.invoke(state.messages, {
       tools: Object.values(tools),
     });
-
+console.log("AI Response:", res);
     state.messages.push(
      new AIMessage(res.content, { tool_calls: res.tool_calls })
 
@@ -78,16 +78,20 @@ const functionCalls =
 // last messsage me message jo ai hae usme function call hae ya nae
     const last = state.messages[state.messages.length - 1];
 
+    // Check if content is an array before calling .find()
+    const fnCall = Array.isArray(last.content) 
+      ? last.content.find(c => c.type === "functionCall")
+      : null;
+    
+    if (!fnCall) return "__end__";
 
-const fnCall = last.content.find(c => c.type === "functionCall");
+    const toolName = fnCall.functionCall.name;
+    const toolArgs = fnCall.functionCall.args;
 
-const toolName = fnCall.functionCall.name;
-const toolArgs = fnCall.functionCall.args;
+    console.log("Tool Name:", toolName);
+    console.log("Tool Args:", toolArgs);
 
-console.log("Tool Name:", toolName);
-console.log("Tool Args:", toolArgs);
-
-    return fnCall ? "tools" : "__end__";
+    return "tools";
   })
   .addEdge("tools", "chat");
 

@@ -1,2 +1,76 @@
 version: '3.8'
 
+services:
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+
+  auth-service:
+    build: ./auth
+    ports:
+      - "3001:3000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/auth
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+      - JWT_SECRET=your_jwt_secret
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  music-service:
+    build: ./music
+    ports:
+      - "3002:3000"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/music
+      - GEMINI_API_KEY=your_gemini_key
+    depends_on:
+      - mongodb
+
+  notification-service:
+    build: ./notification
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/notifications
+      - RABBITMQ_URL=amqp://rabbitmq:5672
+    depends_on:
+      - mongodb
+      - rabbitmq
+
+  tunepal-service:
+    build: ./TunePal
+    ports:
+      - "3005:3005"
+    environment:
+      - MONGO_URI=mongodb://mongodb:27017/tunepal
+      - GEMINI_API_KEY=your_gemini_key
+    depends_on:
+      - mongodb
+
+  artist-frontend:
+    build: ./Artist
+    ports:
+      - "5173:80"
+    depends_on:
+      - auth-service
+      - music-service
+
+  user-frontend:
+    build: ./Users
+    ports:
+      - "5174:80"
+    depends_on:
+      - auth-service
+      - music-service
+      - tunepal-service
+
+volumes:
+  mongodb_data:
