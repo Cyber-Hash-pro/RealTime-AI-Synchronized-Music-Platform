@@ -33,6 +33,7 @@ const graph = new StateGraph(MessagesAnnotation)
       last.tool_calls.map(async (call) => {
         const tool = tools[call.name];
         if (!tool) throw new Error(`Tool ${call.name} not found`);
+        console.log("Invoking tool:", call.name, "with args:", call.args);
 
         const result = await tool.invoke({
           ...call.args,
@@ -71,11 +72,6 @@ const graph = new StateGraph(MessagesAnnotation)
   })
   .addEdge("tools", "chat");
 
-const app = graph.compile();
+const agent = graph.compile();
 
-app
-  .invoke({
-    messages: [{ role: "user", content: "Hello how are you?" }],
-  })
-  .then(console.log)
-  .catch(console.error);
+module.exports = { agent };
