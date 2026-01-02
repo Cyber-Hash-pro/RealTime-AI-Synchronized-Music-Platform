@@ -40,10 +40,11 @@ const initSocketServer = (httpServer)=>{
   try {
     // console.log(`Received AI message from ${socket.user.id}:`, data.message);
 
-    await new Messages({
-      userId: socket.user.id,
-      messages: { role: "user", message: data.message }
-    }).save();
+    // await new Messages({
+    //   userId: socket.user.id,
+    //   messages: { role: "user", message: data.message }
+    // }).save();
+    console.log('token ',socket.token);
 
     const agentResponse = await agent.invoke({
       messages: [{ role: "user", content: data.message }],
@@ -55,10 +56,10 @@ const initSocketServer = (httpServer)=>{
 
     socket.emit("ai-response", { message: lastMessage });
 
-    await new Messages({
-      userId: socket.user.id,
-      messages: { role: "ai", message: lastMessage }
-    }).save();
+    // await new Messages({
+    //   userId: socket.user.id,
+    //   messages: { role: "ai", message: lastMessage }
+    // }).save();
 
   } catch (err) {
     console.error(err);

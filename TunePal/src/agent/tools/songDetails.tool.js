@@ -6,7 +6,7 @@ const SongDetails = tool(
   async ({ nameSong }) => {
     try {
       const res = await axios.get(
-        "http://localhost:4000/api/song/details",
+        "http://localhost:3001/api/song/details",
         {
           params: { nameSong },
         }

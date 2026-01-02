@@ -6,7 +6,7 @@ const RecommendSong = tool(
   async ({ mood }) => {
     try {
       const res = await axios.post(
-        "http://localhost:4000/api/song/recommend",
+        "http://localhost:3001/api/song/recommend",
         {
           mood,
         }

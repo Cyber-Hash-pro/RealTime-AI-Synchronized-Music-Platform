@@ -6,7 +6,7 @@ const PlaySong = tool(
   async ({ nameSong }) => {
     try {
       const res = await axios.post(
-        "http://localhost:4000/api/song/play",
+        "http://localhost:3001/api/song/play",
         { nameSong }
       );
 

@@ -1,5 +1,6 @@
 const express = require('express');
 const musicRoutes = require('./routes/music.routes.js');
+const agentRoutes = require('./routes/agent.routes.js');
 const cookierParser = require('cookie-parser');
 const cors = require('cors');
 const app = express();
@@ -14,5 +15,6 @@ app.use(cors(
 }
 ));
 app.use('/api/music', musicRoutes);
+app.use('/api', agentRoutes);
 
 module.exports = app;

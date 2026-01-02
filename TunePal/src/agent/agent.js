@@ -18,32 +18,39 @@ const tools = {
 };
 
 const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash",
-  apiKey: "AIzaSyCwP_clqSmyxEm0jbiVeIqNqb-Hi43fpPM",
+  model: "gemini-2.5-pro",
+  apiKey: process.env.GEMINI_API_KEY,
 }).bindTools(Object.values(tools));
 
 
 const graph = new StateGraph(MessagesAnnotation)
   .addNode("tools", async (state, config) => {
     const last = state.messages[state.messages.length - 1];
+const functionCalls =
+      last.content?.filter(c => c.type === "functionCall") || [];
 
-    if (!last.tool_calls) return state;
+    if (!functionCalls.length) return state;
 
-    const results = await Promise.all(
-      last.tool_calls.map(async (call) => {
-        const tool = tools[call.name];
-        if (!tool) throw new Error(`Tool ${call.name} not found`);
-        console.log("Invoking tool:", call.name, "with args:", call.args);
+
+  const results = await Promise.all(
+      functionCalls.map(async (c) => {
+        const { name, args } = c.functionCall;
+
+        const tool = tools[name];
+        if (!tool) throw new Error(`Tool ${name} not found`);
+
+        console.log("----------------------------------------");
+        console.log("Invoking tool:", name);
+        console.log("Args:", args);
 
         const result = await tool.invoke({
-          ...call.args,
+          ...args,
           token: config?.metadata?.token,
         });
 
         return new ToolMessage({
-          name: call.name,
+          name,
           content: result,
-          tool_call_id: call.id,
         });
       })
     );
@@ -53,6 +60,7 @@ const graph = new StateGraph(MessagesAnnotation)
   })
 
   .addNode("chat", async (state) => {
+    console.log("Current conversation messages:", state.messages);
     const res = await model.invoke(state.messages, {
       tools: Object.values(tools),
     });
@@ -67,11 +75,34 @@ const graph = new StateGraph(MessagesAnnotation)
 
   .addEdge("__start__", "chat")
   .addConditionalEdges("chat", (state) => {
+// last messsage me message jo ai hae usme function call hae ya nae
     const last = state.messages[state.messages.length - 1];
-    return last.tool_calls?.length ? "tools" : "__end__";
+
+
+const fnCall = last.content.find(c => c.type === "functionCall");
+
+const toolName = fnCall.functionCall.name;
+const toolArgs = fnCall.functionCall.args;
+
+console.log("Tool Name:", toolName);
+console.log("Tool Args:", toolArgs);
+
+    return fnCall ? "tools" : "__end__";
   })
   .addEdge("tools", "chat");
 
 const agent = graph.compile();
 
 module.exports = { agent };
+// [
+//   {
+//     "type": "functionCall",
+//     "functionCall": {
+//       "name": "CreatePlaylist",
+//       "args": {
+//         "maxsize": 5,
+//         "mood": "happy"
+//       }
+//     }
+//   }
+// ]
