@@ -46,10 +46,10 @@ const initSocketServer = (httpServer)=>{
     // }).save();
     console.log('token ',socket.token);
 
-    const agentResponse = await agent.invoke({
-      messages: [{ role: "user", content: data.message }],
-      metadata: { token: socket.token }
-    });
+    const agentResponse = await agent.invoke(
+      { messages: [{ role: "user", content: data.message }] },
+      { configurable: { token: socket.token } }
+    );
 
     const lastMessage =
       agentResponse.messages[agentResponse.messages.length - 1].content;

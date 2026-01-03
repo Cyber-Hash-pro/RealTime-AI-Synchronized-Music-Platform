@@ -6,13 +6,13 @@ const RecommendSong = tool(
   async ({ mood, token }) => {
     try {
       const res = await axios.post(
-        "http://localhost:3002/agent/song/recommend",
+        "http://localhost:3002/api/song/recommend",
         { mood },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          timeout: 8000,
+          timeout: 10000,
         }
       );
 

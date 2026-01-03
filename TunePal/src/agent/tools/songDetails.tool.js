@@ -6,13 +6,13 @@ const SongDetails = tool(
   async ({ nameSong, token }) => {
     try {
       const res = await axios.get(
-        "http://localhost:3002/agent/song/details",
+        "http://localhost:3002/api/song/details",
         {
           params: { nameSong },
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          timeout: 8000,
+          timeout: 10000,
         }
       );
 

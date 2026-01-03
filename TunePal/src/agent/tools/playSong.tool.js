@@ -6,13 +6,13 @@ const FindSong = tool(
   async ({ nameSong, token }) => {
     try {
       const res = await axios.post(
-        "http://localhost:3002/agent/song/find",
+        "http://localhost:3002/api/song/find",
         { nameSong },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          timeout: 8000,
+          timeout: 10000,
         }
       );
 

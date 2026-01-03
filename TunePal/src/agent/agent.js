@@ -3,7 +3,7 @@ require("dotenv").config();
 const { ChatGoogleGenerativeAI } = require("@langchain/google-genai");
 const { ToolMessage, AIMessage } = require("@langchain/core/messages");
 const { StateGraph, MessagesAnnotation } = require("@langchain/langgraph");
-
+const { ChatOpenAI } = require("@langchain/openai");
 const {
   CreatePlaylist,
   PlayPlaylistSong,
@@ -11,6 +11,7 @@ const {
 const { FindSong } = require("./tools/playSong.tool.js");
 const { SongDetails } = require("./tools/songDetails.tool.js");
 const { RecommendSong } = require("./tools/recommend.tool.js");
+
 const tools = {
   CreatePlaylist,
   PlayPlaylistSong,
@@ -19,96 +20,95 @@ const tools = {
   RecommendSong,
 };
 
-const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-pro",
-  apiKey: process.env.GEMINI_API_KEY,
+// const model = new ChatGoogleGenerativeAI({
+//   model: "gemini-2.5-flash",
+//   apiKey: process.env.GEMINI_API_KEY,
+// }).bindTools(Object.values(tools));
+
+const model = new ChatOpenAI({
+  model: "llama-3.3-70b-versatile",   // ya "mixtral-8x7b-32768"
+  apiKey: process.env.GROQ_API_KEY,
+  configuration: {
+    baseURL: "https://api.groq.com/openai/v1",
+  },
 }).bindTools(Object.values(tools));
 
 
 const graph = new StateGraph(MessagesAnnotation)
-  .addNode("tools", async (state, config) => {
-    const last = state.messages[state.messages.length - 1];
-const functionCalls =
-      last.content?.filter(c => c.type === "functionCall") || [];
 
-    if (!functionCalls.length) return state;
+// ================= TOOLS NODE =================
+.addNode("tools", async (state, config) => {
+  const last = state.messages[state.messages.length - 1];
+  const toolCalls = last?.tool_calls || [];
 
+  if (!toolCalls.length) return state;
+
+  const token = config?.configurable?.token;
+  console.log("Token in tools node:", token ? "Present" : "Missing");
 
   const results = await Promise.all(
-      functionCalls.map(async (c) => {
-        const { name, args } = c.functionCall;
+    toolCalls.map(async (call) => {
+      const tool = tools[call.name];
+      if (!tool) throw new Error(`Tool ${call.name} not found`);
 
-        const tool = tools[name];
-        if (!tool) throw new Error(`Tool ${name} not found`);
+      console.log("Invoking Tool:", call.name);
+      console.log("Args:", call.args);
 
-        console.log("----------------------------------------");
-        console.log("Invoking tool:", name);
-        console.log("Args:", args);
+      const result = await tool.invoke({
+        ...call.args,
+        token: token
+      });
 
-        const result = await tool.invoke({
-          ...args,
-          token: config?.metadata?.token,
-        });
+      return new ToolMessage({
+        name: call.name,
+        content: typeof result === 'string' ? result : JSON.stringify(result),
+        tool_call_id: call.id || call.name
+      });
+    })
+  );
 
-        return new ToolMessage({
-          name,
-          content: result,
-        });
-      })
-    );
+  return {
+    ...state,
+    messages: [...state.messages, ...results]
+  };
+})
 
-    state.messages.push(...results);
-    return state;
-  })
+// ================= CHAT NODE =================
+.addNode("chat", async (state) => {
+  console.log("Entering chat node", state);
+  console.log("Current conversation messages:", state.messages);
 
-  .addNode("chat", async (state) => {
-    console.log("Current conversation messages:", state.messages);
-    const res = await model.invoke(state.messages, {
-      tools: Object.values(tools),
-    });
-console.log("AI Response:", res);
-    state.messages.push(
-     new AIMessage(res.content, { tool_calls: res.tool_calls })
+  const res = await model.invoke(state.messages);
 
-    );
+  console.log("RAW GEMINI RESPONSE:", JSON.stringify(res, null, 2));
 
-    return state;
-  })
+  return {
+    ...state,
+    messages: [...state.messages, res]
+  };
+})
 
-  .addEdge("__start__", "chat")
-  .addConditionalEdges("chat", (state) => {
-// last messsage me message jo ai hae usme function call hae ya nae
-    const last = state.messages[state.messages.length - 1];
 
-    // Check if content is an array before calling .find()
-    const fnCall = Array.isArray(last.content) 
-      ? last.content.find(c => c.type === "functionCall")
-      : null;
-    
-    if (!fnCall) return "__end__";
+// ================= FLOW EDGES =================
+.addEdge("__start__", "chat")
 
-    const toolName = fnCall.functionCall.name;
-    const toolArgs = fnCall.functionCall.args;
+.addConditionalEdges("chat", (state) => {
+  const last = state.messages[state.messages.length - 1];
+  console.log("Last AI Message:", last);
 
-    console.log("Tool Name:", toolName);
-    console.log("Tool Args:", toolArgs);
+  const toolCalls = last?.tool_calls || [];
 
-    return "tools";
-  })
-  .addEdge("tools", "chat");
+  if (!toolCalls.length) {
+    console.log("No tool call — ending");
+    return "__end__";
+  }
+
+  console.log("Tool Calls Found:", toolCalls);
+  return "tools";
+})
+
+.addEdge("tools", "chat");
 
 const agent = graph.compile();
 
 module.exports = { agent };
-// [
-//   {
-//     "type": "functionCall",
-//     "functionCall": {
-//       "name": "CreatePlaylist",
-//       "args": {
-//         "maxsize": 5,
-//         "mood": "happy"
-//       }
-//     }
-//   }
-// ]

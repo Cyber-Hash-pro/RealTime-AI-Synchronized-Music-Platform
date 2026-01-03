@@ -5,17 +5,17 @@ const { z } = require("zod");
 const CreatePlaylist = tool(
   async ({ mood, maxsize, title, token }) => {
     try {
-      const finalSize = Math.min(Math.max(Number(maxsize), 1), 6);
+      const finalSize = Math.min(Math.max(Number(maxsize) || 5, 1), 6);
       console.log(`Creating playlist with mood: ${mood}, size: ${finalSize}`);
 
       const res = await axios.post(
-        "http://localhost:3002/agent/playlist/create",
+        "http://localhost:3002/api/playlist/create",
         { mood, maxsize: finalSize, title },
         {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          timeout: 8000,
+          timeout: 10000,
         }
       );
       console.log("Playlist creation response:", res.data);
@@ -48,13 +48,13 @@ const PlayPlaylistSong = tool(
   async ({ namePlaylist, token }) => {
     try {
       const res = await axios.post(
-        "http://localhost:3002/agent/playlist/play",
+        "http://localhost:3002/api/playlist/play",
         { namePlaylist },
         { 
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          timeout: 8000 
+          timeout: 10000 
         }
       );
 
