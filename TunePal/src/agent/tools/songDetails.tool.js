@@ -5,8 +5,12 @@ const axios = require("axios");
 const SongDetails = tool(
   async ({ nameSong, token }) => {
     try {
+      if (!token) {
+        throw new Error("Authentication token is required");
+      }
+      
       const res = await axios.get(
-        "http://localhost:3002/api/song/details",
+        "http://localhost:3001/api/song/details",
         {
           params: { nameSong },
           headers: {
@@ -32,6 +36,7 @@ const SongDetails = tool(
         .string()
         .min(1, "Song name is required")
         .describe("Name or title of the song to get details for"),
+      token: z.string().optional().describe("Authentication token for API requests"),
     }),
   }
 );

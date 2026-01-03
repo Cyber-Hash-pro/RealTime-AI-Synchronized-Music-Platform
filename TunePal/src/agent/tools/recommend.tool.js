@@ -5,8 +5,12 @@ const axios = require("axios");
 const RecommendSong = tool(
   async ({ mood, token }) => {
     try {
+      if (!token) {
+        throw new Error("Authentication token is required");
+      }
+      
       const res = await axios.post(
-        "http://localhost:3002/api/song/recommend",
+        "http://localhost:3001/api/song/recommend",
         { mood },
         {
           headers: {
@@ -36,6 +40,7 @@ const RecommendSong = tool(
         .string()
         .min(1, "Mood is required")
         .describe("User mood like sad, happy, romantic, gym, chill, energetic, party, focus"),
+      token: z.string().optional().describe("Authentication token for API requests"),
     }),
   }
 );

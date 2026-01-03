@@ -5,11 +5,15 @@ const { z } = require("zod");
 const CreatePlaylist = tool(
   async ({ mood, maxsize, title, token }) => {
     try {
+      if (!token) {
+        throw new Error("Authentication token is required");
+      }
+      
       const finalSize = Math.min(Math.max(Number(maxsize) || 5, 1), 6);
       console.log(`Creating playlist with mood: ${mood}, size: ${finalSize}`);
 
       const res = await axios.post(
-        "http://localhost:3002/api/playlist/create",
+        "http://localhost:3001/api/playlist/create",
         { mood, maxsize: finalSize, title },
         {
           headers: {
@@ -39,6 +43,7 @@ const CreatePlaylist = tool(
       mood: z.string().min(1).describe("User mood like happy, sad, romantic, energetic, chill"),
       maxsize: z.coerce.number().min(1).max(20).default(5).describe("Maximum number of songs in playlist (1-20)"),
       title: z.string().optional().describe("Optional custom title for the playlist"),
+      token: z.string().optional().describe("Authentication token for API requests"),
     }),
   }
 );
@@ -47,8 +52,12 @@ const CreatePlaylist = tool(
 const PlayPlaylistSong = tool(
   async ({ namePlaylist, token }) => {
     try {
+      if (!token) {
+        throw new Error("Authentication token is required");
+      }
+      
       const res = await axios.post(
-        "http://localhost:3002/api/playlist/play",
+        "http://localhost:3001/api/playlist/play",
         { namePlaylist },
         { 
           headers: {
@@ -75,6 +84,7 @@ const PlayPlaylistSong = tool(
     description: "Fetches and plays songs from a user or artist playlist by name.",
     schema: z.object({
       namePlaylist: z.string().min(1).describe("Name or title of the playlist to play"),
+      token: z.string().optional().describe("Authentication token for API requests"),
     }),
   }
 );
