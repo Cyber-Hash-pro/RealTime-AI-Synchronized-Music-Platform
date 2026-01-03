@@ -2,20 +2,20 @@ const musicModel = require('../model/music.model.js');
 const playlistModel = require('../model/playlist.model.js');
 const UserPlaylist = require('../model/userplaylist.model.js');
 const { geminisongmooddetection } = require('../services/ai.serviecs.js');
-
 // Agent Tool: Create Playlist based on mood
 const createPlaylistByMood = async (req, res) => {
-    const { mood, maxsize } = req.body;
+    const { mood, maxsize,title } = req.body;
     const userId = req.user.id;
     console.log('api called createPlaylistByMood with mood:', mood, 'and maxsize:', maxsize);
     try {
         // Validate maxsize
         const finalSize = Math.min(Math.max(Number(maxsize), 1), 6);
 
-        // Get songs matching the mood using AI service
-        const songs = await musicModel.find({ mood: new RegExp(mood, 'i') })
-            .limit(finalSize)
-            .lean();
+        // Get songs matching the mood using AI service radmon song
+     const songs = await musicModel.aggregate([
+  { $match: { mood: new RegExp(mood, 'i') } },
+  { $sample: { size: finalSize } }
+]);
 
         if (songs.length === 0) {
             return res.status(404).json({
@@ -30,6 +30,7 @@ const createPlaylistByMood = async (req, res) => {
         // Create user playlist
         const playlist = await UserPlaylist.create({
             name: playlistName,
+            title:title,
             userId: userId,
             musics: songs.map(song => song._id)
         });
@@ -57,105 +58,144 @@ const createPlaylistByMood = async (req, res) => {
         });
     }
 };
+// kya baki hae title second madhe artistplaylist ani userplaylist madhe song fetch slvoe 
 
 // Agent Tool: Play song from playlist
+
 const playPlaylistSong = async (req, res) => {
-    const { namePlaylist } = req.body;
-    const userId = req.user.id;
+  const { namePlaylist } = req.body;
+  const userId = req.user?.id;   // if login required, else optional
 
-    try {
-        // Find the playlist by name for the user
-        const playlist = await UserPlaylist.findOne({
-            name: new RegExp(namePlaylist, 'i'),
-            userId: userId
-        }).populate('musics').lean();
+  try {
+    let userPlaylist = null;
+    let artistPlaylist = null;
 
-        if (!playlist) {
-            // Try artist playlists as fallback
-            const artistPlaylist = await playlistModel.findOne({
-                title: new RegExp(namePlaylist, 'i')
-            }).populate('musics').lean();
-
-            if (!artistPlaylist) {
-                return res.status(404).json({
-                    message: `Playlist "${namePlaylist}" not found`
-                });
-            }
-
-            // Return first song from artist playlist
-            const firstSong = artistPlaylist.musics[0];
-            return res.status(200).json({
-                message: "Playing song from playlist",
-                song: {
-                    id: firstSong._id,
-                    title: firstSong.title,
-                    artist: firstSong.artist,
-                    musicUrl: firstSong.musicUrl,
-                    coverUrl: firstSong.coverUrl
-                },
-                playlist: artistPlaylist.title
-            });
-        }
-
-        // Return first song from user playlist
-        const firstSong = playlist.musics[0];
-        return res.status(200).json({
-            message: "Playing song from playlist",
-            song: {
-                id: firstSong._id,
-                title: firstSong.title,
-                artist: firstSong.artist,
-                musicUrl: firstSong.musicUrl,
-                coverUrl: firstSong.coverUrl
-            },
-            playlist: playlist.name
-        });
-
-    } catch (error) {
-        console.error("Error in playPlaylistSong:", error);
-        return res.status(500).json({
-            message: "Error playing song from playlist",
-            error: error.message
-        });
+    // Fetch User Playlist if user logged in
+    if (userId) {
+      userPlaylist = await UserPlaylist.findOne({
+        title: new RegExp(namePlaylist, "i"),
+        userId
+      })
+        .populate("musics")
+        .lean();
     }
+
+    // Fetch Artist Playlist
+    artistPlaylist = await playlistModel
+      .findOne({
+        title: new RegExp(namePlaylist, "i"),
+      })
+      .populate("musics")
+      .lean();
+
+    // Agar dono nahi mile
+    if (!userPlaylist && !artistPlaylist) {
+      return res.status(404).json({
+        message: `Playlist "${namePlaylist}" not found`
+      });
+    }
+
+    let response = {};
+
+    // If User Playlist Found
+    if (userPlaylist) {
+      if (userPlaylist.musics?.length > 0) {
+        response.userPlaylist = {
+          title: userPlaylist.title,
+          songs: userPlaylist.musics.map(song => ({
+            id: song._id,
+            title: song.title,
+            artist: song.artist,
+            musicUrl: song.musicUrl,
+            coverUrl: song.coverUrl
+          }))
+        };
+      } else {
+        response.userPlaylist = "User playlist empty";
+      }
+    }
+
+    // If Artist Playlist Found
+    if (artistPlaylist) {
+      if (artistPlaylist.musics?.length > 0) {
+        response.artistPlaylist = {
+          title: artistPlaylist.title,
+          songs: artistPlaylist.musics.map(song => ({
+            id: song._id,
+            title: song.title,
+            artist: song.artist,
+            musicUrl: song.musicUrl,
+            coverUrl: song.coverUrl
+          }))
+        };
+      } else {
+        response.artistPlaylist = "Artist playlist empty";
+      }
+    }
+
+    return res.status(200).json({
+      message: "Playlist(s) fetched successfully",
+      ...response
+    });
+
+  } catch (error) {
+    console.error("Error in playPlaylistSong:", error);
+    return res.status(500).json({
+      message: "Error fetching playlist",
+      error: error.message
+    });
+  }
 };
+
 
 // Agent Tool: Play a specific song by name
-const playSong = async (req, res) => {
-    const { nameSong } = req.body;
+const FindSong = async (req, res) => {
+  const { nameSong } = req.body;
 
-    try {
-        // Search for song by title (case-insensitive)
-        const song = await musicModel.findOne({
-            title: new RegExp(nameSong, 'i')
-        }).lean();
-
-        if (!song) {
-            return res.status(404).json({
-                message: `Song "${nameSong}" not found`
-            });
-        }
-
-        return res.status(200).json({
-            message: "Song found",
-            song: {
-                id: song._id,
-                title: song.title,
-                artist: song.artist,
-                musicUrl: song.musicUrl,
-                coverUrl: song.coverUrl,
-                mood: song.mood
-            }
-        });
-
-    } catch (error) {
-        console.error("Error in playSong:", error);
-        return res.status(500).json({
-            message: "Error playing song",
-            error: error.message
-        });
+  try {
+    if (!nameSong || !nameSong.trim()) {
+      return res.status(400).json({
+        success: false,
+        message: "Song name is required"
+      });
     }
+
+    const song = await musicModel.findOne({
+      title: { $regex: new RegExp(nameSong, "i") }   // case-insensitive
+    }).lean();
+
+    if (!song) {
+      return res.status(404).json({
+        success: false,
+        message: `No song found with name "${nameSong}"`,
+        hint: "Try another song name or check spelling"
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Song found",
+      song: {
+        id: song._id,
+        title: song.title,
+        artist: song.artist,
+        musicUrl: song.musicUrl,
+        coverUrl: song.coverUrl,
+        mood: song.mood
+      }
+    });
+
+  } catch (error) {
+    console.error("Error in FindSong:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error while searching song",
+      error: error.message
+    });
+  }
 };
+
 
 // Agent Tool: Recommend songs by mood
 const recommendSongs = async (req, res) => {
@@ -234,7 +274,7 @@ const getSongDetails = async (req, res) => {
 module.exports = {
     createPlaylistByMood,
     playPlaylistSong,
-    playSong,
+    FindSong,
     recommendSongs,
     getSongDetails
 };

@@ -3,33 +3,39 @@ const { z } = require("zod");
 const axios = require("axios");
 
 const RecommendSong = tool(
-  async ({ mood }) => {
+  async ({ mood, token }) => {
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/song/recommend",
+        "http://localhost:3002/agent/song/recommend",
+        { mood },
         {
-          mood,
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 8000,
         }
       );
 
       return JSON.stringify({
-        message: `Recommended songs for mood: ${mood}`,
-        mood,
-        songs: res.data?.songs || [],
+        message: res.data.message || `Recommended songs for mood: ${mood}`,
+        mood: res.data.mood,
+        songs: res.data.songs || [],
       });
     } catch (err) {
-      throw new Error("Error recommending songs: " + err.message);
+      throw new Error(
+        err?.response?.data?.message || "Error recommending songs: " + err.message
+      );
     }
   },
   {
     name: "RecommendSong",
     description:
-      "Recommends songs based on user mood, activity or preference.",
+      "Recommends up to 10 songs based on user mood, activity or preference. Returns a list of songs with details.",
     schema: z.object({
       mood: z
         .string()
         .min(1, "Mood is required")
-        .describe("User mood like sad, happy, romantic, gym, chill"),
+        .describe("User mood like sad, happy, romantic, gym, chill, energetic, party, focus"),
     }),
   }
 );

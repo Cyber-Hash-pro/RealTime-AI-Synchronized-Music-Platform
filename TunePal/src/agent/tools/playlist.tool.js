@@ -3,29 +3,29 @@ const axios = require("axios");
 const { z } = require("zod");
 
 const CreatePlaylist = tool(
-  async ({ mood, maxsize, token }) => {
+  async ({ mood, maxsize, title, token }) => {
     try {
       const finalSize = Math.min(Math.max(Number(maxsize), 1), 6);
       console.log(`Creating playlist with mood: ${mood}, size: ${finalSize}`);
 
       const res = await axios.post(
-        "http://localhost:3001/api/playlist/create",
-        { mood, maxsize: finalSize },
+        "http://localhost:3002/agent/playlist/create",
+        { mood, maxsize: finalSize, title },
         {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-    timeout: 8000,
-  }
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 8000,
+        }
       );
       console.log("Playlist creation response:", res.data);
 
-      return {
-        message: "Playlist created successfully",
+      return JSON.stringify({
+        message: res.data.message || "Playlist created successfully",
         mood,
         finalSongCount: finalSize,
         playlist: res.data.playlist,
-      };
+      });
     } catch (err) {
       throw new Error(
         err?.response?.data?.message || "Error creating playlist: " + err.message
@@ -34,40 +34,47 @@ const CreatePlaylist = tool(
   },
   {
     name: "CreatePlaylist",
-    description: "Creates a music playlist based on user mood, genre or activity.",
+    description: "Creates a music playlist based on user mood, genre or activity. Returns the created playlist with songs.",
     schema: z.object({
-      mood: z.string().min(1),
-      maxsize: z.coerce.number().min(1).max(20),
+      mood: z.string().min(1).describe("User mood like happy, sad, romantic, energetic, chill"),
+      maxsize: z.coerce.number().min(1).max(20).default(5).describe("Maximum number of songs in playlist (1-20)"),
+      title: z.string().optional().describe("Optional custom title for the playlist"),
     }),
   }
 );
 
 
 const PlayPlaylistSong = tool(
-  async ({ namePlaylist }) => {
+  async ({ namePlaylist, token }) => {
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/playlist/play",
+        "http://localhost:3002/agent/playlist/play",
         { namePlaylist },
-        { timeout: 8000 }
+        { 
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 8000 
+        }
       );
 
-      return {
-        message: "Song playing successfully",
+      return JSON.stringify({
+        message: res.data.message || "Playlist fetched successfully",
         playlist: namePlaylist,
-        song: res.data?.song || "Song started",
-      };
+        userPlaylist: res.data.userPlaylist,
+        artistPlaylist: res.data.artistPlaylist,
+      });
     } catch (err) {
       throw new Error(
-        err?.response?.data?.message || "Error playing song: " + err.message
+        err?.response?.data?.message || "Error fetching playlist: " + err.message
       );
     }
   },
   {
     name: "PlayPlaylistSong",
-    description: "Plays a song from a playlist.",
+    description: "Fetches and plays songs from a user or artist playlist by name.",
     schema: z.object({
-      namePlaylist: z.string().min(1),
+      namePlaylist: z.string().min(1).describe("Name or title of the playlist to play"),
     }),
   }
 );

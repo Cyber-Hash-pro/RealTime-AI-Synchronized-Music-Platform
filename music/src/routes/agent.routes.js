@@ -12,7 +12,7 @@ router.post('/playlist/create', authMiddleware.authUserMiddleware, agentControll
 router.post('/playlist/play', authMiddleware.authUserMiddleware, agentController.playPlaylistSong);
 
 // Play a specific song
-router.post('/song/play', authMiddleware.authUserMiddleware, agentController.playSong);
+router.post('/song/find', authMiddleware.authUserMiddleware, agentController.FindSong);
 
 // Recommend songs by mood
 router.post('/song/recommend', authMiddleware.authUserMiddleware, agentController.recommendSongs);

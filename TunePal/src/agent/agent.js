@@ -8,17 +8,19 @@ const {
   CreatePlaylist,
   PlayPlaylistSong,
 } = require("./tools/playlist.tool.js");
+const { FindSong } = require("./tools/playSong.tool.js");
 const { SongDetails } = require("./tools/songDetails.tool.js");
 const { RecommendSong } = require("./tools/recommend.tool.js");
 const tools = {
   CreatePlaylist,
   PlayPlaylistSong,
+  FindSong,
   SongDetails,
   RecommendSong,
 };
 
 const model = new ChatGoogleGenerativeAI({
-  model: "gemini-2.5-flash",
+  model: "gemini-2.5-pro",
   apiKey: process.env.GEMINI_API_KEY,
 }).bindTools(Object.values(tools));
 

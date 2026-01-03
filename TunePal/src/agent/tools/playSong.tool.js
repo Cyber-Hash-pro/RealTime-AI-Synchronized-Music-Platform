@@ -2,34 +2,41 @@ const { tool } = require("@langchain/core/tools");
 const { z } = require("zod");
 const axios = require("axios");
 
-const PlaySong = tool(
-  async ({ nameSong }) => {
+const FindSong = tool(
+  async ({ nameSong, token }) => {
     try {
       const res = await axios.post(
-        "http://localhost:3001/api/song/play",
-        { nameSong }
+        "http://localhost:3002/agent/song/find",
+        { nameSong },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          timeout: 8000,
+        }
       );
 
       return JSON.stringify({
-        message: "Song playing",
-        song: nameSong,
-        data: res.data,
+        success: res.data.success,
+        message: res.data.message,
+        song: res.data.song,
       });
     } catch (err) {
-      throw new Error("Error playing song: " + err.message);
+      throw new Error(
+        err?.response?.data?.message || "Error finding song: " + err.message
+      );
     }
   },
   {
-    name: "PlaySong",
-    description: "Plays a specific song based on user request.",
+    name: "FindSong",
+    description: "Finds and plays a specific song by name. Returns song details including title, artist, music URL, cover URL, and mood.",
     schema: z.object({
       nameSong: z
         .string()
         .min(1, "Song name is required")
-        .describe("Name of the song to play"),
+        .describe("Name or title of the song to find and play"),
     }),
   }
 );
 
-module.exports = { PlaySong };
-//playsong  -> newsong
+module.exports = { FindSong };
