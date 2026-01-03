@@ -17,6 +17,7 @@
     "color-name": "^1.1.4",
     "console-table-printer": "^2.15.0",
     "cookie": "^1.1.1",
+    "cookie-parser": "^1.4.7",
     "decamelize": "^1.2.0",
     "dotenv": "^17.2.3",
     "eventemitter3": "^4.0.7",

@@ -2,22 +2,54 @@ import { useState, useEffect, useRef } from 'react';
 import { useTunePalSocket } from '../services/tunePalSocket';
 import { useNavigate } from 'react-router-dom';
 import { useSelector } from 'react-redux';
+import axios from 'axios';
+
+const TUNEPAL_URL = import.meta.env.VITE_TUNEPAL_URL || 'http://localhost:3003';
 
 const TunePal = () => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [isConnected, setIsConnected] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const messagesEndRef = useRef(null);
   const navigate = useNavigate();
   const user = useSelector((state) => state.user.userData);
 
   const { socket, connect, disconnect, sendMessage } = useTunePalSocket();
 
+  // Load chat history
   useEffect(() => {
-    // Check if user is logged in
-   
+    const loadChatHistory = async () => {
+      try {
+        setIsLoadingHistory(true);
+        const response = await axios.get(`${TUNEPAL_URL}/api/agent/userchat`, {
+          withCredentials: true,
+        });
 
+        if (response.data.chat && Array.isArray(response.data.chat)) {
+          // Transform chat history to message format
+          const historyMessages = response.data.chat
+            .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+            .map((chatItem) => ({
+              role: chatItem.messages[0].role,
+              content: chatItem.messages[0].message,
+              timestamp: new Date(chatItem.createdAt),
+            }));
+          
+          setMessages(historyMessages);
+        }
+      } catch (error) {
+        console.error('Error loading chat history:', error);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+
+    loadChatHistory();
+  }, []);
+
+  useEffect(() => {
     // Connect to TunePal socket
     connect();
 
@@ -162,7 +194,17 @@ const TunePal = () => {
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         <div className="max-w-4xl mx-auto">
-          {messages.length === 0 && (
+          {isLoadingHistory && (
+            <div className="flex justify-center items-center py-12">
+              <div className="flex gap-2">
+                <span className="w-3 h-3 bg-purple-500 rounded-full animate-bounce"></span>
+                <span className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></span>
+                <span className="w-3 h-3 bg-purple-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+              </div>
+            </div>
+          )}
+          
+          {!isLoadingHistory && messages.length === 0 && (
             <div className="text-center py-12">
               <div className="w-20 h-20 mx-auto mb-4 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center">
                 <span className="text-4xl">🎵</span>

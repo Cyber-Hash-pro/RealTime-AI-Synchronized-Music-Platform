@@ -36,7 +36,7 @@ const model = new ChatOpenAI({
 
 const graph = new StateGraph(MessagesAnnotation)
 
-// ================= TOOLS NODE =================
+
 .addNode("tools", async (state, config) => {
   const last = state.messages[state.messages.length - 1];
   const toolCalls = last?.tool_calls || [];
@@ -73,7 +73,6 @@ const graph = new StateGraph(MessagesAnnotation)
   };
 })
 
-// ================= CHAT NODE =================
 .addNode("chat", async (state) => {
   console.log("Entering chat node", state);
   console.log("Current conversation messages:", state.messages);
@@ -89,7 +88,6 @@ const graph = new StateGraph(MessagesAnnotation)
 })
 
 
-// ================= FLOW EDGES =================
 .addEdge("__start__", "chat")
 
 .addConditionalEdges("chat", (state) => {
@@ -108,6 +106,8 @@ const graph = new StateGraph(MessagesAnnotation)
 })
 
 .addEdge("tools", "chat");
+
+
 
 const agent = graph.compile();
 
